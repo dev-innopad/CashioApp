@@ -1,0 +1,50 @@
+{
+	"title": "Welcome,",
+	"appearance": "Appearance",
+	"default_Theme": "Change Theme",
+	"dark_Theme": "Dark Theme",
+	"light_Theme": "Light Theme",
+	"language": "Language",
+	"english": "English",
+	"japanese": "日本語",
+	"espanol": "español",
+	"account": "Account",
+	"logout": "Logout",
+	"settings": "Settings",
+	"change_password": "Change password",
+	"otpMessage": "Please verify your identity to continue.\nWe’ve sent an OTP to your mobile number.",
+	"settingScreen": {
+		"appearance": {
+			"title": "App Appearance",
+			"desc": "Choose between Light or Dark mode for the app appearance."
+		},
+		"changeIcon": {
+			"title": "Change Icon",
+			"desc": "Change the app launch icon."
+		},
+		"language": {
+			"title": "Language",
+			"desc": "Select your preferred language for the app interface."
+		},
+		"notifications": {
+			"title": "Notifications",
+			"desc": "Manage your notification preferences."
+		},
+		"terms": {
+			"title": "Terms & Conditions",
+			"desc": "Read our terms and conditions for using the app."
+		},
+		"feedback": {
+			"title": "Send us Feedback",
+			"desc": "Give us your feedback to help improve the app."
+		},
+		"about": {
+			"title": "About Us!",
+			"desc": "Learn more about the app, its version, and legal information."
+		},
+		"logout": {
+			"title": "Logout",
+			"desc": "Sign out from your account."
+		}
+	}
+}

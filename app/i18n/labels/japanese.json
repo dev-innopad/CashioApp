@@ -1,0 +1,50 @@
+{
+	"title": "ようこそ",
+	"appearance": "外見",
+	"default_Theme": "デフォルトテーマ",
+	"dark_Theme": "ダークテーマ",
+	"light_Theme": "ライトテーマ",
+	"language": "言語",
+	"english": "English",
+	"japanese": "日本語",
+	"espanol": "español",
+	"account": "アカウント",
+	"logout": "ログアウト",
+	"settings": "設定",
+	"change_password": "パスワードを変更する",
+	"otpMessage": "続行するには、ご本人確認を行ってください。\n携帯電話番号にOTPを送信しました。",
+	"settingScreen": {
+		"appearance": {
+			"title": "アプリの外観",
+			"desc": "アプリの外観をライトモードまたはダークモードで選択します。"
+		},
+		"changeIcon": {
+			"title": "アイコンを変更",
+			"desc": "アプリの起動アイコンを変更します。"
+		},
+		"language": {
+			"title": "言語",
+			"desc": "アプリのインターフェースで使用する言語を選択します。"
+		},
+		"notifications": {
+			"title": "通知",
+			"desc": "通知の設定を管理します。"
+		},
+		"terms": {
+			"title": "利用規約",
+			"desc": "アプリの利用規約をお読みください。"
+		},
+		"feedback": {
+			"title": "フィードバックを送信",
+			"desc": "アプリの改善に役立つフィードバックをお寄せください。"
+		},
+		"about": {
+			"title": "私たちについて！",
+			"desc": "アプリのバージョンや法的情報について詳しく知る。"
+		},
+		"logout": {
+			"title": "ログアウト",
+			"desc": "アカウントからサインアウトします。"
+		}
+	}
+}

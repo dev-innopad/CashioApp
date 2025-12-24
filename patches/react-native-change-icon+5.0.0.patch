@@ -1,0 +1,59 @@
+diff --git a/node_modules/react-native-change-icon/ios/ChangeIcon.h b/node_modules/react-native-change-icon/ios/ChangeIcon.h
+index 3624fe4..3547915 100644
+--- a/node_modules/react-native-change-icon/ios/ChangeIcon.h
++++ b/node_modules/react-native-change-icon/ios/ChangeIcon.h
+@@ -1,11 +1,6 @@
+ #import <UIKit/UIKit.h>
+ 
+-#ifdef RCT_NEW_ARCH_ENABLED
+-#import "RNChangeIconSpec.h"
+-@interface ChangeIcon : NSObject <NativeChangeIconSpec, UIApplicationDelegate>
+-#else
+ #import <React/RCTBridgeModule.h>
+ @interface ChangeIcon : NSObject <RCTBridgeModule, UIApplicationDelegate>
+-#endif
+ 
+ @end
+diff --git a/node_modules/react-native-change-icon/ios/ChangeIcon.mm b/node_modules/react-native-change-icon/ios/ChangeIcon.mm
+index 389fe05..ee607db 100644
+--- a/node_modules/react-native-change-icon/ios/ChangeIcon.mm
++++ b/node_modules/react-native-change-icon/ios/ChangeIcon.mm
+@@ -43,9 +43,35 @@ + (BOOL)requiresMainQueueSetup {
+             resolve(newIconName);
+         }
+ 
+-        [[UIApplication sharedApplication] setAlternateIconName:newIconName completionHandler:^(NSError * _Nullable error) {
+-            return;
+-        }];
++        UIApplication *sharedApplication = [UIApplication sharedApplication];
++
++        if ([sharedApplication respondsToSelector:@selector(supportsAlternateIcons)] &&
++             [sharedApplication supportsAlternateIcons]) {
++
++             NSMutableString *selectorString = [[NSMutableString alloc] initWithCapacity:40];
++             [selectorString appendString:@"_setAlternate"];
++             [selectorString appendString:@"IconName:"];
++             [selectorString appendString:@"completionHandler:"];
++
++             SEL selector = NSSelectorFromString(selectorString);
++
++             if ([sharedApplication respondsToSelector:selector]) {
++                 NSMethodSignature *signature = [sharedApplication methodSignatureForSelector:selector];
++
++                 if (signature) {
++                     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
++                     [invocation setTarget:sharedApplication];
++                     [invocation setSelector:selector];
++
++                     [invocation setArgument:&newIconName atIndex:2];
++
++                     void (^completionHandler)(NSError * _Nullable) = ^(NSError * _Nullable error) {};
++                     [invocation setArgument:&completionHandler atIndex:3];
++
++                     [invocation invoke];
++                 }
++             }
++        }
+     });
+ }
+ 

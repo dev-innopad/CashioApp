@@ -1,0 +1,9 @@
+{
+	"Console Log with File Name": {
+	  "prefix": "logg", // Trigger word to invoke the snippet
+	  "body": [
+		"console.log(\"[ / $1 ] ------->\", $1 );"
+	  ],
+	  "description": "Inserts a console.log statement with file name and a custom value"
+	}
+  }

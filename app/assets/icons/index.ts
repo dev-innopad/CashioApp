@@ -1,0 +1,17 @@
+export const Icons = {
+	icnHome: require('./home.png'),
+	icnSetting: require('./setting.png'),
+	icnBack: require('./back.png'),
+	icnSearch: require('./search.png'),
+	icnLightTheme: require('./lighttheme.png'),
+	icnDarkTheme: require('./darktheme.png'),
+	icnTheme: require('./theme.png'),
+	icnTranslate: require('./translate.png'),
+	icnLogout: require('./logout.png'),
+	icnAppIcon: require('./appicon.png'),
+	icnNotifications: require('./notifications.png'),
+	icnSendfeedback: require('./sendfeedback.png'),
+	icnInfo: require('./info.png'),
+	icnTerms: require('./terms.png'),
+	icnAlertIcon: require('./alertIcon.png'),
+};

@@ -1,0 +1,50 @@
+{
+	"title": "Bienvenido,",
+	"appearance": "Apariencia",
+	"default_Theme": "Tema predeterminado",
+	"dark_Theme": "Tema oscuro",
+	"light_Theme": "Tema claro",
+	"language": "Idioma",
+	"english": "English",
+	"japanese": "日本語",
+	"espanol": "español",
+	"account": "Cuenta",
+	"logout": "Cerrar sesión",
+	"settings": "ajustes",
+	"change_password": "Cambiar contraseña",
+	"otpMessage": "Por favor, verifica tu identidad para continuar.\nHemos enviado un OTP a tu número de móvil.",
+	"settingScreen": {
+		"appearance": {
+			"title": "Apariencia de la Aplicación",
+			"desc": "Elige entre el modo Claro u Oscuro para la apariencia de la aplicación."
+		},
+		"changeIcon": {
+			"title": "Cambiar Icono",
+			"desc": "Cambia el ícono de lanzamiento de la aplicación."
+		},
+		"language": {
+			"title": "Idioma",
+			"desc": "Selecciona tu idioma preferido para la interfaz de la aplicación."
+		},
+		"notifications": {
+			"title": "Notificaciones",
+			"desc": "Gestiona tus preferencias de notificaciones."
+		},
+		"terms": {
+			"title": "Términos y Condiciones",
+			"desc": "Lee nuestros términos y condiciones para usar la aplicación."
+		},
+		"feedback": {
+			"title": "Envíanos Comentarios",
+			"desc": "Danos tu opinión para ayudar a mejorar la aplicación."
+		},
+		"about": {
+			"title": "¡Sobre Nosotros!",
+			"desc": "Aprende más sobre la aplicación, su versión e información legal."
+		},
+		"logout": {
+			"title": "Cerrar Sesión",
+			"desc": "Cierra la sesión de tu cuenta."
+		}
+	}
+}
