@@ -1,310 +1,488 @@
-import { FlashList, FlashListProps } from '@shopify/flash-list';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import FastImage from '@d11/react-native-fast-image';
-import { trigger } from 'react-native-haptic-feedback';
-import { useDispatch, useSelector } from 'react-redux';
-import { FontSize } from '../../assets/fonts';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  StatusBar,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
 import AppText from '../../components/AppText';
-import AppTopTab from '../../components/AppTopTab';
-import { allCenter, AppShadow } from '../../constants/commonStyle';
-import { screenWidth, windowWidth } from '../../constants/metrics';
-import { AppHeight, AppHorizontalMargin, AppHorizontalPadding, AppMargin, AppPadding, AppVerticalMargin, AppWidth } from '../../constants/responsive';
-import { t } from '../../i18n';
-import { GET_AIRING, GET_COMPLETED, GET_UPCOMING } from '../../services/API/endpoints';
-import { APIMethods } from '../../services/API/methods';
-import { AppDispatch } from '../../store';
-import { setData } from '../../store/reducers/userData.slice';
-import { AppColorTypes } from '../../theme/AppColors';
-import { useTheme } from '../../theme/ThemeProvider';
-import IsLoadingHome from './isLoading';
-import Spinner from 'react-native-spinkit';
-interface HomeScreenProps {
-	navigation: any;
+import {AnimatedCircularProgress} from 'react-native-circular-progress';
+
+// Import Lucide icons
+import {
+  Bell,
+  Home,
+  BarChart3,
+  Wallet,
+  User,
+  ShoppingCart,
+  Car,
+  ShoppingBag,
+  CreditCard,
+  Utensils,
+  Bus,
+  Tv,
+  CircleDollarSign,
+  TrendingUp,
+  PiggyBank,
+  GanttChartSquare,
+  Fuel,
+} from 'lucide-react-native';
+
+// Static data for transactions
+const transactions = [
+  {
+    id: '1',
+    title: 'Shell',
+    date: 'Sep 02, 2022',
+    amount: '750',
+    color: '#F97316',
+    icon: Fuel,
+  },
+  {
+    id: '2',
+    title: 'Supermart',
+    date: 'Sep 01, 2022',
+    amount: '235',
+    color: '#22D3EE',
+    icon: ShoppingCart,
+  },
+  {
+    id: '4',
+    title: 'AMAZON',
+    date: 'Aug 31, 2022',
+    amount: '600',
+    color: '#A855F7',
+    icon: ShoppingBag,
+  },
+];
+
+// Budget categories data
+const budgetCategories = [
+  {
+    id: '1',
+    title: 'Food',
+    percentage: 75,
+    spent: 3800,
+    total: 8000,
+    color: '#FF6B6B',
+    icon: Utensils,
+  },
+  {
+    id: '2',
+    title: 'Transport',
+    percentage: 25,
+    spent: 3800,
+    total: 8000,
+    color: '#4ECDC4',
+    icon: Car,
+  },
+  {
+    id: '3',
+    title: 'Shopping',
+    percentage: 92,
+    spent: 3800,
+    total: 8000,
+    color: '#FFD166',
+    icon: ShoppingBag,
+  },
+];
+
+// Recent expenses data
+const recentExpenses = [
+  {
+    id: '1',
+    title: 'House Rent',
+    description: 'Description here',
+    date: '02 Oct 25',
+    amount: '6000',
+    icon: Home,
+  },
+  {
+    id: '2',
+    title: 'Groceries',
+    description: 'Weekly grocery shopping',
+    date: '01 Oct 25',
+    amount: '1050',
+    icon: ShoppingCart,
+  },
+  {
+    id: '3',
+    title: 'Netflix',
+    description: 'Monthly subscription',
+    date: '30 Sep 25',
+    amount: '500',
+    icon: Tv,
+  },
+];
+
+export default function HomeScreen({navigation}: any) {
+  return (
+    <AppMainContainer hideTop hideBottom>
+      <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
+        <StatusBar barStyle={'light-content'} translucent={false} />
+        <SafeAreaView style={{flex: 1}}>
+          <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.welcomeText}>Welcome Back</Text>
+                <Text style={styles.userName}>Jhon Alex</Text>
+              </View>
+              <Pressable style={styles.notificationIcon}>
+                <Bell size={24} color="#fff" />
+              </Pressable>
+            </View>
+
+            {/* Monthly Summary */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Monthly Summary</Text>
+              <View style={styles.summaryCards}>
+                <View style={styles.summaryCard}>
+                  <CircleDollarSign size={24} color="#F4C66A" />
+                  <Text style={styles.summaryLabel}>Budget Remaining</Text>
+                  <Text style={styles.summaryValue}>$10,000</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <TrendingUp size={24} color="#FF6B6B" />
+                  <Text style={styles.summaryLabel}>Total Spent</Text>
+                  <Text style={styles.summaryValue}>$15,000</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <PiggyBank size={24} color="#4ECDC4" />
+                  <Text style={styles.summaryLabel}>Total Savings</Text>
+                  <Text style={styles.summaryValue}>$5,000</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Budget Tracking */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Budget Tracking</Text>
+                <Pressable>
+                  <Text style={styles.seeAllText}>See all</Text>
+                </Pressable>
+              </View>
+
+              {budgetCategories.map(category => {
+                const IconComponent = category.icon;
+                return (
+                  <View key={category.id} style={styles.budgetCard}>
+                    <View style={styles.budgetHeader}>
+                      <View style={styles.budgetTitleContainer}>
+                        <IconComponent size={20} color={category.color} />
+                        <Text style={styles.budgetTitle}>{category.title}</Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.budgetPercentage,
+                          {color: category.color},
+                        ]}>
+                        {category.percentage}%
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarContainer}>
+                      <View style={styles.progressBarBackground}>
+                        <View
+                          style={[
+                            styles.progressBarFill,
+                            {
+                              width: `${category.percentage}%`,
+                              backgroundColor: category.color,
+                            },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                    <Text style={styles.budgetAmount}>
+                      Spent ${category.spent.toLocaleString()} | $
+                      {category.total.toLocaleString()}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Recent Expenses */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Expenses</Text>
+                <Pressable>
+                  <Text style={styles.seeAllText}>See all</Text>
+                </Pressable>
+              </View>
+
+              {recentExpenses.map(expense => {
+                const IconComponent = expense.icon;
+                return (
+                  <View key={expense.id} style={styles.expenseCard}>
+                    <View
+                      style={[
+                        styles.expenseIcon,
+                        {
+                          backgroundColor: `${
+                            expense.icon === Home ? '#F97316' : '#4ECDC4'
+                          }20`,
+                        },
+                      ]}>
+                      <IconComponent
+                        size={24}
+                        color={expense.icon === Home ? '#F97316' : '#4ECDC4'}
+                      />
+                    </View>
+                    <View style={styles.expenseInfo}>
+                      <Text style={styles.expenseTitle}>{expense.title}</Text>
+                      <Text style={styles.expenseDescription}>
+                        {expense.description}
+                      </Text>
+                    </View>
+                    <View style={styles.expenseRight}>
+                      <Text style={styles.expenseDate}>{expense.date}</Text>
+                      <Text style={styles.expenseAmount}>{expense.amount}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Your Transactions (Original Data) */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>My transactions</Text>
+              {transactions.map(transaction => {
+                const IconComponent = transaction.icon;
+                return (
+                  <View key={transaction.id} style={styles.transactionCard}>
+                    <View
+                      style={[
+                        styles.transactionIcon,
+                        {backgroundColor: transaction.color},
+                      ]}>
+                      <IconComponent size={20} color="#000" />
+                    </View>
+                    <View style={styles.transactionInfo}>
+                      <Text style={styles.transactionTitle}>
+                        {transaction.title}
+                      </Text>
+                      <Text style={styles.transactionDate}>
+                        {transaction.date}
+                      </Text>
+                    </View>
+                    <Text style={styles.transactionAmount}>
+                      {transaction.amount}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    </AppMainContainer>
+  );
 }
 
-const HomeScreen = (props: HomeScreenProps) => {
-
-	const dispatch: AppDispatch = useDispatch();
-
-	const { AppColors } = useTheme();
-	const styles = useMemo(() => createStyles(AppColors), [AppColors]);
-
-	const userData = useSelector((state: any) => state.userData);
-	const localize = useSelector((state: any) => state.appData);
-
-	const [isLoading, setIsLoading] = useState(true);
-	const [isRefreshing, setIsRefreshing] = useState(false);
-	const [isPaginating, setIsPaginating] = useState(false);
-
-	const [hasMore, setHasMore] = useState(true);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [showScrollToTop, setShowScrollToTop] = useState(false);
-
-	// const [listingData, setListingData] = useState([]);
-
-	const [initialLoadComplete, setInitialLoadComplete] = useState(false); // Track initial load
-
-	//@ts-ignore
-	const flatListRef = useRef<FlashListProps>(null);
-	const fadeAnim = useRef(new Animated.Value(0)).current;
-
-	const [activeTab, setActiveTab] = useState<number>(0);
-
-	// Define your tabs
-	const TopTabs: any = [
-		{ id: 1, title: 'Airing', },
-		{ id: 2, title: 'Upcoming', },
-		{ id: 3, title: 'Completed', }
-	];
-
-	// Handle tab press
-	const handleTabPress = (id: any) => {
-		setActiveTab(id);
-		scrollToTop();
-	};
-
-	useEffect(() => {
-		fetchData(1)
-	}, [activeTab]);
-
-	const fetchData = async (page: number) => {
-		try {
-
-			if (page === 1) {
-				page === 1
-					&& !isRefreshing
-					&& setIsLoading(true);
-			} else {
-				setIsPaginating(true);
-			}
-
-			let LOOPING_DATA;
-
-			switch (activeTab) {
-				case 0: LOOPING_DATA = GET_AIRING; break;
-				case 1: LOOPING_DATA = GET_UPCOMING; break;
-				case 2: LOOPING_DATA = GET_COMPLETED; break;
-				default: LOOPING_DATA = GET_UPCOMING; break;
-			}
-
-			const params = { page };
-			const response: any = await APIMethods.get(LOOPING_DATA, params, []);
-			const data = response?.data;
-
-			if (page === 1) {
-				// setListingData(data);
-				dispatch(setData(data));
-				setInitialLoadComplete(true); // Set initial load complete
-			} else {
-				// const updatedData: any = [...listingData, ...data];
-				const updatedData: any = [...userData?.items, ...data];
-				dispatch(setData(updatedData));
-				// setListingData(updatedData);
-			}
-
-			setHasMore(data.length > 0);
-
-		} catch (error) {
-			console.error(error);
-			setHasMore(false);
-		} finally {
-			if (page === 1) {
-				setIsLoading(false);
-				setIsRefreshing(false);
-			} else {
-				setIsPaginating(false);
-			}
-		}
-	};
-
-	const loadMoreData = async () => {
-		if (!isPaginating && hasMore && initialLoadComplete) {
-			const nextPage = currentPage + 1;
-			await fetchData(nextPage);
-			setCurrentPage(nextPage);
-			trigger('impactLight');
-		}
-	};
-
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		setCurrentPage(1);
-		setHasMore(true);
-		await fetchData(1);
-	};
-
-	const fadeButton = (val: number) => {
-		Animated.timing(fadeAnim, {
-			toValue: val,
-			duration: 300,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const scrollToTop = () => {
-		if (flatListRef.current) {
-			flatListRef.current.scrollToOffset({ offset: 0, animated: true });
-			trigger('impactHeavy');
-		}
-	};
-
-	const renderListItem = ({ item, index }: any) => {
-		const itemTitles = item.title_english || item.title;
-		const itemRatings = item.score ?? 0;
-		return (
-			<Pressable key={index} style={styles.renderContainer}>
-				<FastImage source={{ uri: item?.images?.jpg?.large_image_url }} style={styles.itemImage} />
-				<View style={styles.textContainer}>
-					<AppText fontSize={FontSize._12} numberOfLines={2} subtitle={itemTitles} textColor={AppColors.textColor} />
-					<AppText fontSize={FontSize._12} style={styles.ratingText} subtitle={`⭐ ${itemRatings}`} textColor={AppColors.textColor} />
-				</View>
-			</Pressable>
-		);
-	};
-
-	const renderFooter = () => {
-		if (!isPaginating || !hasMore) return null;
-		return (
-			<View style={{ ...allCenter }}>
-				<Spinner type={'Circle'}
-					size={14}
-					color={AppColors.primary100}
-					style={styles.footerLoader}
-				/>
-			</View>
-		);
-	};
-
-	return (
-		<AppMainContainer>
-			<View style={styles.subMainContainer}>
-
-				<AppText title={`${t('title')} ${userData.userName}`}
-					textColor={AppColors.primary100}
-				/>
-
-				<View style={{ marginVertical: AppVerticalMargin._10 }}>
-					<AppTopTab tabs={TopTabs}
-						onTabChange={handleTabPress}
-						initialTabIndex={activeTab}
-						activeTextColor={AppColors.textColor}
-						inactiveTextColor={AppColors.textColor}
-						backgroundColor={AppColors.segmentBackground}
-						activeButtonColor={AppColors.secondary10}
-						animationDuration={150}
-					/>
-				</View>
-
-				<View style={styles.flatListContainerWrapper}>
-					{isLoading ? (
-						<IsLoadingHome isLoading={isLoading} />
-					) : (
-						<FlashList	//  data={listingData}
-							data={userData?.items}
-							// estimatedItemSize={300} only for flatlist
-							ref={flatListRef}
-							removeClippedSubviews={true}
-							numColumns={2}
-							renderItem={renderListItem}
-							keyExtractor={(item, index) => index.toString()}
-							contentContainerStyle={styles.flatListContainer}
-							showsVerticalScrollIndicator={false}
-							refreshControl={
-								<RefreshControl
-									refreshing={isRefreshing}
-									onRefresh={handleRefresh}
-									colors={[AppColors.primary100]}
-									tintColor={AppColors.primary100}
-								/>
-							}
-							ListFooterComponent={renderFooter}
-							onEndReached={loadMoreData}
-							onEndReachedThreshold={0.2}
-							ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-							onScroll={(event) => {
-								const offsetY = event.nativeEvent.contentOffset.y;
-								if (offsetY > 100 && !showScrollToTop) {
-									setShowScrollToTop(true);
-									fadeButton(1);
-								} else if (offsetY <= 100 && showScrollToTop) {
-									setShowScrollToTop(false);
-									fadeButton(0);
-								}
-							}}
-							scrollEventThrottle={16}
-						/>
-					)}
-				</View>
-
-			</View>
-
-			<Pressable onPress={scrollToTop}>
-				<Animated.View style={[styles.scrollToTopButton, {
-					backgroundColor: AppColors.primary100,
-					opacity: fadeAnim
-				}]}>
-					{isRefreshing
-						? <ActivityIndicator />
-						: <AppText label={"Scroll to Top!"}
-							textColor={AppColors.basicWhite} />}
-				</Animated.View>
-			</Pressable>
-
-		</AppMainContainer>
-	);
-};
-
-const createStyles = (AppColors: AppColorTypes) => {
-	return (
-		StyleSheet.create({
-			renderContainer: {
-				backgroundColor: AppColors.secondary10,
-				width: screenWidth / 2 - AppWidth._15
-			},
-			subMainContainer: {
-				marginHorizontal: AppHorizontalMargin._10,
-				flex: 1,
-			},
-			flatListContainerWrapper: {
-				flex: 1,
-			},
-			flatListContainer: {
-				paddingBottom: AppVerticalMargin._75,
-				paddingTop: AppVerticalMargin._10,
-			},
-			itemImage: {
-				height: AppHeight._250,
-			},
-			textContainer: {
-				padding: AppPadding._10,
-			},
-			ratingText: {
-				marginTop: AppMargin._5,
-			},
-			footerLoader: {
-				marginVertical: 10,
-			},
-			columnWrapper: {
-				justifyContent: 'space-between',
-			},
-			itemSeparator: {
-				height: AppHeight._10,
-			},
-			scrollToTopButton: {
-				position: 'absolute',
-				bottom: AppHeight._50, // Adjust this value as needed
-				right: windowWidth / 3,
-				paddingHorizontal: AppHorizontalPadding._20,
-				paddingVertical: AppVerticalMargin._10,
-				borderRadius: 20,
-				justifyContent: 'center',
-				alignItems: 'center',
-				...AppShadow,
-			},
-		})
-	)
-}
-
-export default HomeScreen;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    marginBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+  },
+  userName: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  seeAllText: {
+    color: '#F4C66A',
+    fontSize: 14,
+  },
+  summaryCards: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#1F1D3A',
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  summaryValue: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  budgetCard: {
+    backgroundColor: '#1F1D3A',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  budgetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  budgetTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  budgetTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  budgetPercentage: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  progressBarContainer: {
+    marginBottom: 8,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  budgetAmount: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+  },
+  expenseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1F1D3A',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  expenseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  expenseInfo: {
+    flex: 1,
+  },
+  expenseTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  expenseDescription: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+  },
+  expenseRight: {
+    alignItems: 'flex-end',
+  },
+  expenseDate: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  expenseAmount: {
+    color: '#FF6B6B',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  transactionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1F1D3A',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  transactionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  transactionDate: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+  },
+  transactionAmount: {
+    color: '#FF6B6B',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

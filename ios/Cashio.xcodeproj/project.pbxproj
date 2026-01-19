@@ -8,14 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-Cashio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-Cashio.a */; };
-		0F1739D3F3F94BCFA3CEE624 /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5C61DEF48164D168149CA8E /* Montserrat-SemiBold.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		14924DC9594E4F5A8F8E54C6 /* index.ts in Resources */ = {isa = PBXBuildFile; fileRef = B157071473B341198629272D /* index.ts */; };
 		6C231E46A9BC8ACE0C3C8103 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		8BB50E8A86C24A94AC612066 /* Montserrat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 43290B88AC70426AABD9F23F /* Montserrat-Regular.ttf */; };
-		A44AC70452E34B30BCAE670F /* Montserrat-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D425B9594FD149DFAB017CAF /* Montserrat-Bold.ttf */; };
-		14924DC9594E4F5A8F8E54C6 /* index.ts in Resources */ = {isa = PBXBuildFile; fileRef = B157071473B341198629272D /* index.ts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,15 +21,12 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Cashio/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Cashio/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-Cashio.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cashio.debug.xcconfig"; path = "Target Support Files/Pods-Cashio/Pods-Cashio.debug.xcconfig"; sourceTree = "<group>"; };
-		43290B88AC70426AABD9F23F /* Montserrat-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-Regular.ttf"; path = "../app/assets/fonts/Montserrat-Regular.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-Cashio.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cashio.release.xcconfig"; path = "Target Support Files/Pods-Cashio/Pods-Cashio.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-Cashio.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Cashio.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Cashio/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Cashio/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		C5C61DEF48164D168149CA8E /* Montserrat-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-SemiBold.ttf"; path = "../app/assets/fonts/Montserrat-SemiBold.ttf"; sourceTree = "<group>"; };
-		D425B9594FD149DFAB017CAF /* Montserrat-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-Bold.ttf"; path = "../app/assets/fonts/Montserrat-Bold.ttf"; sourceTree = "<group>"; };
+		B157071473B341198629272D /* index.ts */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = index.ts; path = ../app/assets/fonts/index.ts; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		B157071473B341198629272D /* index.ts */ = {isa = PBXFileReference; name = "index.ts"; path = "../app/assets/fonts/index.ts"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,9 +44,6 @@
 		0F1F5C062BB1481992C053A4 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				D425B9594FD149DFAB017CAF /* Montserrat-Bold.ttf */,
-				43290B88AC70426AABD9F23F /* Montserrat-Regular.ttf */,
-				C5C61DEF48164D168149CA8E /* Montserrat-SemiBold.ttf */,
 				B157071473B341198629272D /* index.ts */,
 			);
 			name = Resources;
@@ -181,9 +172,6 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				6C231E46A9BC8ACE0C3C8103 /* PrivacyInfo.xcprivacy in Resources */,
-				A44AC70452E34B30BCAE670F /* Montserrat-Bold.ttf in Resources */,
-				8BB50E8A86C24A94AC612066 /* Montserrat-Regular.ttf in Resources */,
-				0F1739D3F3F94BCFA3CEE624 /* Montserrat-SemiBold.ttf in Resources */,
 				14924DC9594E4F5A8F8E54C6 /* index.ts in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -285,6 +273,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = EJRH7C39D5;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Cashio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -314,6 +303,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = EJRH7C39D5;
 				INFOPLIST_FILE = Cashio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
