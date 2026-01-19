@@ -1,4 +1,3 @@
-// screens/ReportScreen.tsx - Complete Implementation
 import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
@@ -46,6 +45,7 @@ import {
 import {BarChart, PieChart as RNPPieChart} from 'react-native-gifted-charts';
 import {ProgressCircle} from 'react-native-svg-charts';
 import Svg, {Circle} from 'react-native-svg';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -203,6 +203,7 @@ export default function ReportScreen({navigation}: any) {
   // Function to export report
   const handleExport = () => {
     console.log('Exporting report...');
+    _showToast('Coming Soon', 'info');
   };
 
   // Function to share report
@@ -341,42 +342,29 @@ export default function ReportScreen({navigation}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Report</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={handleExport}>
+                <Download size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
             {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Report</Text>
-              <View style={styles.headerActions}>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={handleFilter}>
-                  <Filter size={24} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={handleExport}>
-                  <Download size={24} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={handleShare}>
-                  <Share2 size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
 
             {/* Statistics Header */}
             <View style={styles.statisticsHeader}>
               <View>
-                <Text style={styles.statisticsTitle}>Statistics</Text>
+                {/* <Text style={styles.statisticsTitle}>Statistics</Text> */}
                 <Text style={styles.statisticsSubtitle}>
                   Visualizing progress through numbers
                 </Text>
               </View>
-              <TouchableOpacity style={styles.notificationButton}>
-                <Bell size={24} color="#fff" />
-              </TouchableOpacity>
             </View>
 
             {/* Period Selector */}
@@ -471,9 +459,6 @@ export default function ReportScreen({navigation}: any) {
               <View style={styles.chartHeader}>
                 <BarChart3 size={24} color="#fff" />
                 <Text style={styles.chartTitle}>Expense Trend</Text>
-                <TouchableOpacity>
-                  <ChevronRight size={20} color="#F4C66A" />
-                </TouchableOpacity>
               </View>
 
               <View style={styles.chartWrapper}>
@@ -565,10 +550,10 @@ export default function ReportScreen({navigation}: any) {
                     innerCircleColor="#1F1D3A"
                     innerCircleBorderWidth={0}
                     innerCircleBorderColor="transparent"
-                    showText
-                    showValuesAsLabels
-                    textColor="#fff"
-                    textSize={14}
+                    // showText
+                    // showValuesAsLabels
+                    // textColor="#fff"
+                    // textSize={14}
                     showTextBackground={false}
                     onPress={(item: any, index: number) => {
                       // When pie chart segment is pressed, toggle that category
@@ -894,6 +879,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   headerButton: {
     width: 40,

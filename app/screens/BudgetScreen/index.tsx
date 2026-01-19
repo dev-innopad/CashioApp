@@ -25,6 +25,7 @@ import {
   Download,
   Share2,
 } from 'lucide-react-native';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 export default function ReportScreen({navigation}: any) {
   const [savingsGoals, setSavingsGoals] = useState([
@@ -63,24 +64,23 @@ export default function ReportScreen({navigation}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Financial Report</Text>
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => _showToast('Coming Soon', 'info')}>
+                <Download size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
             {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Financial Report</Text>
-              <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Download size={24} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Share2 size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
 
             {/* User Info */}
-            <View style={styles.userInfoSection}>
+            {/* <View style={styles.userInfoSection}>
               <View style={styles.userAvatar}>
                 <Text style={styles.avatarText}>JA</Text>
               </View>
@@ -91,7 +91,7 @@ export default function ReportScreen({navigation}: any) {
               <TouchableOpacity style={styles.notificationButton}>
                 <Bell size={24} color="#fff" />
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Total Profit/Net Worth */}
             <View style={styles.profitSection}>
@@ -107,7 +107,11 @@ export default function ReportScreen({navigation}: any) {
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>My Saving Goals</Text>
-                <TouchableOpacity style={styles.addButton}>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    _showToast('Coming Soon', 'info');
+                  }}>
                   <Plus size={20} color="#F4C66A" />
                   <Text style={styles.addButtonText}>Add Goal</Text>
                 </TouchableOpacity>
@@ -151,11 +155,14 @@ export default function ReportScreen({navigation}: any) {
                     </View>
 
                     <View style={styles.goalActions}>
-                      <TouchableOpacity style={styles.actionButton}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => _showToast('Coming Soon', 'info')}>
                         <Text style={styles.actionButtonText}>Add Funds</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.actionButton, styles.editButton]}>
+                        style={[styles.actionButton, styles.editButton]}
+                        onPress={() => _showToast('Coming Soon', 'info')}>
                         <Text style={styles.editButtonText}>Edit Goal</Text>
                       </TouchableOpacity>
                     </View>
@@ -236,6 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   backButton: {
     width: 40,

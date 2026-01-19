@@ -1,4 +1,3 @@
-// screens/AddExpenseScreen.tsx - Updated with "Add New Category" option
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -32,6 +31,9 @@ import {
 } from 'lucide-react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {useDispatch} from 'react-redux';
+import {addExpense} from '../../store/reducers/userData.slice';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 interface Category {
   id: string;
@@ -89,6 +91,8 @@ export default function AddExpenseScreen({navigation, route}: any) {
       isDefault: true,
     },
   ];
+
+  const dispatch = useDispatch();
 
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [expense, setExpense] = useState<Partial<Expense>>({
@@ -195,39 +199,47 @@ export default function AddExpenseScreen({navigation, route}: any) {
   // Save expense
   const handleSaveExpense = () => {
     if (!expense.amount || expense.amount <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      _showToast('Please enter a valid amount', 'error');
       return;
     }
 
     if (!expense.description?.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+      _showToast('Please enter a description', 'error');
       return;
     }
 
     if (!expense.category) {
-      Alert.alert('Error', 'Please select a category');
+      _showToast('Please select a category', 'error');
       return;
     }
 
-    const newExpense: Expense = {
+    // Convert date to ISO string for serialization
+    const dateString =
+      expense.date instanceof Date ? expense.date.toISOString() : expense.date;
+
+    const newExpense = {
       id: Date.now().toString(),
       amount: expense.amount!,
       description: expense.description!,
-      category: expense.category!,
-      date: expense.date!,
+      category: expense.category!, // This should be an object
+      date: dateString, // Store as string
       location: expense.location,
       receipt: receipt,
       notes: expense.notes,
     };
 
-    // Save to local storage or send to server
-    console.log('Saving expense:', newExpense);
+    console.log('new expense', newExpense);
 
-    // Pass back to previous screen
+    // Save to Redux store using the new addExpense action
+    dispatch(addExpense(newExpense));
+
+    console.log('Expense saved to Redux:', newExpense);
+
+    // Pass back to previous screen if needed
     route.params?.onSaveExpense?.(newExpense);
-    Alert.alert('Success', 'Expense added successfully!', [
-      {text: 'OK', onPress: () => navigation.goBack()},
-    ]);
+
+    _showToast('Expense added successfully!', 'success');
+    navigation.goBack();
   };
 
   return (
@@ -235,24 +247,24 @@ export default function AddExpenseScreen({navigation, route}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.headerButton}>
+              <ChevronLeft size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add Expense</Text>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveExpense}>
+              <Send size={24} color="#F4C66A" />
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
             {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.headerButton}>
-                <ChevronLeft size={24} color="#fff" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Add Expense</Text>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveExpense}>
-                <Send size={24} color="#F4C66A" />
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Amount Input */}
             <View style={styles.amountSection}>
@@ -272,6 +284,21 @@ export default function AddExpenseScreen({navigation, route}: any) {
                   keyboardType="decimal-pad"
                   maxLength={10}
                 />
+              </View>
+            </View>
+
+            {/* Quick Amount Buttons */}
+            <View style={styles.quickAmountsContainer}>
+              <Text style={styles.sectionLabel}>Quick Amount</Text>
+              <View style={styles.quickAmounts}>
+                {[100, 500, 1000, 2000, 5000].map(amount => (
+                  <TouchableOpacity
+                    key={amount}
+                    style={styles.quickAmountButton}
+                    onPress={() => setExpense({...expense, amount})}>
+                    <Text style={styles.quickAmountText}>${amount}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
@@ -416,21 +443,6 @@ export default function AddExpenseScreen({navigation, route}: any) {
                 />
               </View>
             </View>
-
-            {/* Quick Amount Buttons */}
-            <View style={styles.quickAmountsContainer}>
-              <Text style={styles.sectionLabel}>Quick Amount</Text>
-              <View style={styles.quickAmounts}>
-                {[100, 500, 1000, 2000, 5000].map(amount => (
-                  <TouchableOpacity
-                    key={amount}
-                    style={styles.quickAmountButton}
-                    onPress={() => setExpense({...expense, amount})}>
-                    <Text style={styles.quickAmountText}>${amount}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
           </ScrollView>
 
           {/* Category Picker Modal */}
@@ -531,6 +543,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   headerButton: {
     width: 40,
@@ -564,7 +577,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    alignItems: 'center',
+    // alignItems: 'center',
   },
   sectionLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -581,7 +594,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     flex: 1,
-    textAlign: 'center',
+    // textAlign: 'center',
   },
   formContainer: {
     backgroundColor: '#1F1D3A',
@@ -722,7 +735,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F1D3A',
     borderRadius: 20,
     padding: 20,
-    marginBottom: 40,
   },
   quickAmounts: {
     flexDirection: 'row',

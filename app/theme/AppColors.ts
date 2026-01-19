@@ -36,6 +36,7 @@ export interface AppColorTypes {
   error: string;
   success: string;
   warning: string;
+  info: string;
 }
 
 // Utility: Generate primary color shades based on lighten percentages
@@ -123,6 +124,7 @@ const STATUS_COLORS = {
   error: 'rgba(229, 115, 115, 1)',
   success: 'rgba(92, 184, 92, 1)',
   warning: 'rgba(249, 200, 50, 1)',
+  info: 'rgba(100, 181, 246, 1)',
 };
 
 const BASE_SECONDARY_LIGHT = '#101010ff';

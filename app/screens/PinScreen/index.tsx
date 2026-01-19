@@ -13,20 +13,46 @@ import AppText from '../../components/AppText';
 import {FontSize} from '../../assets/fonts';
 import {Delete} from 'lucide-react-native';
 import {useTheme} from '../../theme/ThemeProvider';
+import {useSelector, useDispatch} from 'react-redux';
+import {loginUser} from '../../store/reducers/userData.slice';
 
 const PIN_LENGTH = 4;
-const SUCCESS_PIN = '1234';
 
 export default function PinScreen({navigation}: any) {
   const {AppColors} = useTheme();
   const [pin, setPin] = useState<string[]>([]);
+
+  // Add Redux hooks
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state: any) => state.userData.currentUser);
+  const users = useSelector((state: any) => state.userData.users);
 
   const shakeX = useSharedValue(0);
 
   useEffect(() => {
     if (pin.length === PIN_LENGTH) {
       const enteredPin = pin.join('');
-      if (enteredPin === SUCCESS_PIN) {
+
+      // Dynamic PIN check - find user with matching PIN
+      let userPin = '';
+      if (currentUser) {
+        // If we have a current user, use their PIN
+        userPin = currentUser.pin;
+      } else if (users && users.length > 0) {
+        // If no current user but we have users, use the first user's PIN
+        // In a multi-user app, you'd need to identify which user
+        userPin = users[0].pin;
+      }
+
+      if (userPin && enteredPin === userPin) {
+        // Success - login the user
+        if (currentUser) {
+          dispatch(loginUser({userId: currentUser.id, pin: enteredPin}));
+        } else if (users.length > 0) {
+          // If no currentUser but we have users, login the first one
+          dispatch(loginUser({userId: users[0].id, pin: enteredPin}));
+        }
+
         setTimeout(() => {
           navigation?.replace?.('BottomTab');
         }, 300);
@@ -37,6 +63,7 @@ export default function PinScreen({navigation}: any) {
     }
   }, [pin]);
 
+  // Rest of the code remains the same...
   const triggerShake = () => {
     shakeX.value = withSequence(
       withTiming(-12, {duration: 60}),
@@ -105,13 +132,23 @@ export default function PinScreen({navigation}: any) {
     );
   };
 
+  const getTitle = () => {
+    if (currentUser) {
+      return `Welcome, ${currentUser.name.split(' ')[0]}`;
+    } else if (users && users.length > 0) {
+      return `Enter your PIN`;
+    } else {
+      return 'Enter PIN (No user found)';
+    }
+  };
+
   return (
     <AppMainContainer hideTop hideBottom>
       <StatusBar barStyle={'light-content'} translucent={false} />
       <LinearGradient colors={['#141326', '#4A1622']} style={styles.container}>
         <AppText
           style={styles.title}
-          title="Enter Pin (1234)"
+          title={getTitle()}
           textColor="rgba(255,255,255,0.6)"
         />
         <Animated.View style={[styles.dotContainer, shakeStyle]}>
@@ -166,6 +203,7 @@ export default function PinScreen({navigation}: any) {
   );
 }
 
+// Styles remain exactly the same...
 const styles = StyleSheet.create({
   container: {
     flex: 1,

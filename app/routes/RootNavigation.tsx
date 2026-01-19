@@ -16,6 +16,8 @@ import AuthNavigator from './AuthNavigator';
 import PinScreen from '../screens/PinScreen';
 import AddExpenseScreen from '../screens/AddExpenseScreen';
 import AddCategoryScreen from '../screens/AddCategoryScreen';
+import WelcomeScreen from '../screens/WelcomeScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -71,6 +73,17 @@ const RootNavigation: React.FC = (props: any) => {
           name={NavigationKeys.AddExpenseScreen}
           component={AddExpenseScreen}
         />
+        <Stack.Screen
+          options={stackScreenOptions}
+          name={NavigationKeys.WelcomeScreen}
+          component={WelcomeScreen}
+        />
+        <Stack.Screen
+          options={stackScreenOptions}
+          name={NavigationKeys.RegisterScreen}
+          component={RegisterScreen}
+        />
+
         <Stack.Screen
           // options={stackScreenOptions}
           name={NavigationKeys.AddCategoryScreen}

@@ -1,5 +1,5 @@
 // screens/ProfileScreen.tsx
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   TextInput,
   Pressable,
   TouchableOpacity,
+  Alert,
+  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
@@ -18,35 +20,213 @@ import {
   Mail,
   Phone,
   Calendar,
-  ChevronLeft,
   Bell,
   Edit2,
   Save,
+  LogOut,
+  DollarSign,
+  Target,
+  Shield,
+  Key,
+  Eye,
+  EyeOff,
+  Cross,
+  X,
 } from 'lucide-react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import * as ImagePicker from 'react-native-image-picker';
+import {
+  logoutUser,
+  updateUserProfile,
+} from '../../store/reducers/userData.slice';
+import {_showInfoToast, _showToast} from '../../services/UIs/ToastConfig';
 
 export default function ProfileScreen({navigation}: any) {
+  const dispatch = useDispatch();
+
+  // Get user data from Redux
+  const currentUser = useSelector((state: any) => state.userData.currentUser);
+  const expenses = useSelector((state: any) => state.userData.expenses || []);
+
   const [isEditing, setIsEditing] = useState(false);
+  const [showOldPin, setShowOldPin] = useState(false);
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
+  const [isChangingPin, setIsChangingPin] = useState(false);
+
   const [userData, setUserData] = useState({
-    name: 'Jhon Alex',
-    email: 'jhon@example.com',
-    phone: '+880 1234-56789',
-    dob: '15 Oct 1999',
+    name: '',
+    email: '',
+    phone: '',
+    monthlyBudget: '',
+    profileImage: '',
   });
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Here you would save to your backend
+  const [pinData, setPinData] = useState({
+    oldPin: '',
+    newPin: '',
+    confirmPin: '',
+  });
+
+  // Initialize user data from Redux
+  useEffect(() => {
+    if (currentUser) {
+      setUserData({
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || '',
+        monthlyBudget: currentUser.monthlyBudget?.toString() || '',
+        profileImage: currentUser.profileImage || '',
+      });
+    }
+  }, [currentUser]);
+
+  // Calculate user statistics
+  const calculateStats = () => {
+    const totalSpent = expenses.reduce(
+      (sum: number, expense: any) => sum + (expense.amount || 0),
+      0,
+    );
+
+    const totalBudget = currentUser?.monthlyBudget || 0;
+    const remainingBudget = Math.max(0, totalBudget - totalSpent);
+    const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+    return {
+      totalSpent,
+      totalBudget,
+      remainingBudget,
+      utilization: Math.round(utilization),
+    };
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
+  const stats = calculateStats();
+
+  const handleSave = () => {
+    if (!userData.name.trim()) {
+      _showToast('Please enter your name', 'info');
+      return;
+    }
+
+    if (userData.email && !isValidEmail(userData.email)) {
+      _showToast('Please enter a valid email address', 'info');
+      return;
+    }
+
+    const monthlyBudget = parseFloat(userData.monthlyBudget);
+    if (isNaN(monthlyBudget) || monthlyBudget <= 0) {
+      _showToast('Please enter a valid monthly budget', 'info');
+      return;
+    }
+
+    // Update user profile in Redux
+    dispatch(
+      updateUserProfile({
+        name: userData.name,
+        email: userData.email || undefined,
+        phone: userData.phone || undefined,
+        monthlyBudget: monthlyBudget,
+        profileImage: userData.profileImage || undefined,
+      }),
+    );
+
+    setIsEditing(false);
+    _showToast('Profile updated successfully!', 'success');
+  };
+
+  const handleChangePin = () => {
+    if (!pinData.oldPin || pinData.oldPin.length !== 4) {
+      _showToast('Please enter your current 4-digit PIN', 'info');
+      return;
+    }
+
+    if (pinData.oldPin !== currentUser?.pin) {
+      _showToast('Current PIN is incorrect', 'info');
+      return;
+    }
+
+    if (!pinData.newPin || pinData.newPin.length !== 4) {
+      _showToast('New PIN must be 4 digits', 'info');
+      return;
+    }
+
+    if (pinData.newPin !== pinData.confirmPin) {
+      _showToast('New PINs do not match', 'info');
+      return;
+    }
+
+    if (pinData.oldPin === pinData.newPin) {
+      _showToast('New PIN must be different from current PIN', 'info');
+      return;
+    }
+
+    // Update PIN in Redux
+    dispatch(
+      updateUserProfile({
+        pin: pinData.newPin,
+      }),
+    );
+
+    setIsChangingPin(false);
+    setPinData({oldPin: '', newPin: '', confirmPin: ''});
+    _showToast('PIN updated successfully!', 'success');
+  };
+
+  const handleSelectImage = () => {
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaType: 'photo',
+      quality: 0.8,
+      maxWidth: 800,
+      maxHeight: 800,
+    };
+
+    ImagePicker.launchImageLibrary(options, response => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        Alert.alert('Error', 'Failed to select image');
+      } else if (response.assets && response.assets[0]) {
+        const imageUri = response.assets[0].uri;
+        setUserData({...userData, profileImage: imageUri});
+
+        // Update profile image in Redux
+        dispatch(
+          updateUserProfile({
+            profileImage: imageUri,
+          }),
+        );
+      }
+    });
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          dispatch(logoutUser());
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'PinScreen'}],
+          });
+        },
+      },
+    ]);
+  };
+
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const renderInputField = (
     label: string,
     value: string,
     icon: React.ReactNode,
-    key: string,
+    key: keyof typeof userData,
+    keyboardType: any = 'default',
   ) => (
     <View style={styles.inputContainer}>
       <View style={styles.inputLabelRow}>
@@ -56,64 +236,122 @@ export default function ProfileScreen({navigation}: any) {
       {isEditing ? (
         <TextInput
           style={styles.textInput}
-          value={userData[key as keyof typeof userData]}
+          value={value}
           onChangeText={text => setUserData({...userData, [key]: text})}
           placeholder={`Enter ${label}`}
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          keyboardType={keyboardType}
+          // editable={key !== 'monthlyBudget'} // Don't edit budget from here
+          editable={true}
         />
       ) : (
-        <Text style={styles.inputValue}>{value}</Text>
+        <Text style={styles.inputValue}>
+          {key === 'monthlyBudget'
+            ? `$${parseFloat(value).toLocaleString()}`
+            : value || 'Not set'}
+        </Text>
       )}
     </View>
   );
+
+  const renderPinInput = (
+    label: string,
+    value: string,
+    show: boolean,
+    setShow: (show: boolean) => void,
+    key: keyof typeof pinData,
+  ) => (
+    <View style={styles.inputContainer}>
+      <View style={styles.inputLabelRow}>
+        <Key size={20} color="#F4C66A" />
+        <Text style={styles.inputLabel}>{label}</Text>
+      </View>
+      <View style={styles.pinInputContainer}>
+        <TextInput
+          style={styles.pinInput}
+          value={value}
+          onChangeText={text =>
+            setPinData({...pinData, [key]: text.replace(/[^0-9]/g, '')})
+          }
+          placeholder="••••"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          keyboardType="numeric"
+          secureTextEntry={!show}
+          maxLength={4}
+        />
+        <TouchableOpacity
+          onPress={() => setShow(!show)}
+          style={styles.eyeButton}>
+          {show ? (
+            <EyeOff size={20} color="#F4C66A" />
+          ) : (
+            <Eye size={20} color="#F4C66A" />
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <AppMainContainer hideTop hideBottom>
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>My Profile</Text>
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>My Profile</Text>
-              <TouchableOpacity style={styles.notificationButton}>
-                <Bell size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Profile Info Section */}
+            {/* Profile Section */}
             <View style={styles.profileSection}>
               <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <User size={60} color="#fff" />
-                </View>
-                <TouchableOpacity style={styles.editAvatarButton}>
-                  <Edit2 size={16} color="#fff" />
-                </TouchableOpacity>
+                {userData.profileImage ? (
+                  <Image
+                    source={{uri: userData.profileImage}}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <View style={styles.avatar}>
+                    <User size={60} color="#fff" />
+                  </View>
+                )}
+                {isEditing && (
+                  <TouchableOpacity
+                    onPress={handleSelectImage}
+                    style={styles.editAvatarButton}>
+                    <Edit2 size={16} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
               <Text style={styles.userName}>{userData.name}</Text>
-              <Text style={styles.userEmail}>{userData.email}</Text>
+              <Text style={styles.userEmail}>
+                {userData.email || 'No email set'}
+              </Text>
             </View>
 
             {/* Edit Profile Section */}
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Edit Profile</Text>
+                <Text style={styles.sectionTitle}>Personal Information</Text>
                 {!isEditing ? (
                   <TouchableOpacity
-                    onPress={handleEdit}
+                    onPress={() => setIsEditing(true)}
                     style={styles.editButton}>
                     <Edit2 size={20} color="#F4C66A" />
                     <Text style={styles.editButtonText}>Edit</Text>
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
-                    onPress={handleSave}
+                    onPress={() => setIsEditing(false)}
                     style={styles.saveButton}>
-                    <Save size={20} color="#4ECDC4" />
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    {/* <X size={20} color="#4ECDC4" /> */}
+                    <Text style={styles.saveButtonText}>Cancel</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -129,27 +367,43 @@ export default function ProfileScreen({navigation}: any) {
                 userData.email,
                 <Mail size={20} color="#F4C66A" />,
                 'email',
+                'email-address',
               )}
               {renderInputField(
-                'Phone Number',
+                'Phone',
                 userData.phone,
                 <Phone size={20} color="#F4C66A" />,
                 'phone',
+                'phone-pad',
               )}
               {renderInputField(
-                'Date of Birth',
-                userData.dob,
-                <Calendar size={20} color="#F4C66A" />,
-                'dob',
+                'Monthly Budget',
+                userData.monthlyBudget,
+                <DollarSign size={20} color="#F4C66A" />,
+                'monthlyBudget',
+                'numeric',
               )}
 
               {isEditing && (
                 <View style={styles.buttonRow}>
-                  <Pressable
+                  {/* <Pressable
                     style={styles.cancelButton}
-                    onPress={() => setIsEditing(false)}>
+                    onPress={() => {
+                      setIsEditing(false);
+                      // Reset to original values
+                      if (currentUser) {
+                        setUserData({
+                          name: currentUser.name || '',
+                          email: currentUser.email || '',
+                          phone: currentUser.phone || '',
+                          monthlyBudget:
+                            currentUser.monthlyBudget?.toString() || '',
+                          profileImage: currentUser.profileImage || '',
+                        });
+                      }
+                    }}>
                     <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </Pressable>
+                  </Pressable> */}
                   <Pressable
                     style={styles.saveChangesButton}
                     onPress={handleSave}>
@@ -161,47 +415,88 @@ export default function ProfileScreen({navigation}: any) {
               )}
             </View>
 
+            {/* Security Section */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Security</Text>
+                <TouchableOpacity
+                  onPress={() => setIsChangingPin(!isChangingPin)}
+                  style={styles.editButton}>
+                  <Shield size={20} color="#F4C66A" />
+                  <Text style={styles.editButtonText}>
+                    {isChangingPin ? 'Cancel' : 'Change PIN'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {isChangingPin ? (
+                <>
+                  {renderPinInput(
+                    'Current PIN',
+                    pinData.oldPin,
+                    showOldPin,
+                    setShowOldPin,
+                    'oldPin',
+                  )}
+                  {renderPinInput(
+                    'New PIN',
+                    pinData.newPin,
+                    showNewPin,
+                    setShowNewPin,
+                    'newPin',
+                  )}
+                  {renderPinInput(
+                    'Confirm New PIN',
+                    pinData.confirmPin,
+                    showConfirmPin,
+                    setShowConfirmPin,
+                    'confirmPin',
+                  )}
+
+                  <Pressable
+                    style={styles.changePinButton}
+                    onPress={handleChangePin}>
+                    <Text style={styles.changePinButtonText}>Update PIN</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <View style={styles.securityInfo}>
+                  <View style={styles.securityItem}>
+                    <Shield size={20} color="#4ECDC4" />
+                    <Text style={styles.securityText}>
+                      Your account is secured with a 4-digit PIN
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
             {/* App Control Section */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>App Control</Text>
+              <Text style={styles.sectionTitle}>Account</Text>
               <View style={styles.appControlGrid}>
-                <TouchableOpacity style={styles.appControlItem}>
-                  <View
-                    style={[
-                      styles.controlIcon,
-                      {backgroundColor: 'rgba(249, 115, 22, 0.2)'},
-                    ]}>
-                    <Bell size={24} color="#F97316" />
-                  </View>
-                  <Text style={styles.controlLabel}>Notifications</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.appControlItem}>
-                  <View
-                    style={[
-                      styles.controlIcon,
-                      {backgroundColor: 'rgba(34, 211, 238, 0.2)'},
-                    ]}>
-                    <User size={24} color="#22D3EE" />
-                  </View>
-                  <Text style={styles.controlLabel}>Privacy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.appControlItem}>
-                  <View
-                    style={[
-                      styles.controlIcon,
-                      {backgroundColor: 'rgba(134, 239, 172, 0.2)'},
-                    ]}>
-                    <Save size={24} color="#86EFAC" />
-                  </View>
-                  <Text style={styles.controlLabel}>Backup</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.appControlItem}>
+                <TouchableOpacity
+                  style={styles.appControlItem}
+                  onPress={() => _showToast('Coming Soon', 'info')}>
                   <View
                     style={[
                       styles.controlIcon,
                       {backgroundColor: 'rgba(168, 85, 247, 0.2)'},
                     ]}>
-                    <ChevronLeft size={24} color="#A855F7" />
+                    <Bell size={24} color="#A855F7" />
+                  </View>
+                  <Text style={styles.controlLabel}>Notifications</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.appControlItem}
+                  onPress={handleLogout}>
+                  <View
+                    style={[
+                      styles.controlIcon,
+                      {backgroundColor: 'rgba(255, 107, 107, 0.2)'},
+                    ]}>
+                    <LogOut size={24} color="#FF6B6B" />
                   </View>
                   <Text style={styles.controlLabel}>Logout</Text>
                 </TouchableOpacity>
@@ -226,6 +521,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   backButton: {
     width: 40,
@@ -265,6 +561,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#F97316',
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     borderWidth: 3,
     borderColor: '#F97316',
   },
@@ -321,7 +624,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   saveButtonText: {
-    color: '#4ECDC4',
+    color: '#fff',
     fontSize: 14,
   },
   inputContainer: {
@@ -343,6 +646,22 @@ const styles = StyleSheet.create({
     padding: 12,
     color: '#fff',
     fontSize: 16,
+  },
+  pinInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  pinInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 12,
+  },
+  eyeButton: {
+    padding: 8,
   },
   inputValue: {
     color: '#fff',
@@ -381,6 +700,63 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  changePinButton: {
+    backgroundColor: '#4ECDC4',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  changePinButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  securityInfo: {
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+  },
+  securityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  securityText: {
+    color: '#4ECDC4',
+    fontSize: 14,
+    flex: 1,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  statLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   appControlGrid: {
     flexDirection: 'row',

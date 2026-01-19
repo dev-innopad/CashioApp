@@ -30,6 +30,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import * as ImagePicker from 'react-native-image-picker';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 // Default category icons
 const defaultIcons = [
@@ -152,7 +153,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
   // Add new category
   const handleAddCategory = () => {
     if (!newCategory.name.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+      _showToast('Please enter a category name', 'error');
       return;
     }
 
@@ -193,7 +194,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
   const handleDeleteCategory = (id: string) => {
     Alert.alert(
       'Delete Category',
-      'Are you sure you want to delete this category? All expenses in this category will be moved to "Uncategorized".',
+      'Are you sure you want to delete this category? All expenses in this category will be deleted.',
       [
         {text: 'Cancel', style: 'cancel'},
         {
@@ -236,10 +237,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
 
     if (result.assets && result.assets[0]) {
       // Handle the image - in a real app, you'd upload to server or save locally
-      Alert.alert(
-        'Success',
-        'Image selected (in real app, this would be saved)',
-      );
+      _showToast('Image selected', 'success');
     }
     setShowCustomIconModal(false);
   };
@@ -252,7 +250,8 @@ export default function AddCategoryScreen({navigation, route}: any) {
     });
 
     if (result.assets && result.assets[0]) {
-      Alert.alert('Success', 'Photo taken (in real app, this would be saved)');
+      // Handle the image - in a real app, you'd upload to server or save locally
+      _showToast('Image selected', 'success');
     }
     setShowCustomIconModal(false);
   };
@@ -262,22 +261,22 @@ export default function AddCategoryScreen({navigation, route}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.headerButton}>
+              <ChevronLeft size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Manage Categories</Text>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Save size={24} color="#F4C66A" />
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
             {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.headerButton}>
-                <ChevronLeft size={24} color="#fff" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Manage Categories</Text>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Save size={24} color="#F4C66A" />
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Add New Category Form */}
             <View style={styles.addCategoryContainer}>
@@ -391,7 +390,9 @@ export default function AddCategoryScreen({navigation, route}: any) {
                       <>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => setEditingCategory(category)}>
+                          onPress={() =>
+                            _showToast('Edit feature coming soon', 'info')
+                          }>
                           <Edit2 size={18} color="#F4C66A" />
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -552,6 +553,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   headerButton: {
     width: 40,

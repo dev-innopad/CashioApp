@@ -19,4 +19,6 @@ export const NavigationKeys = {
   BudgetScreen: 'BudgetScreen',
   ProfileScreen: 'ProfileScreen',
   AddCategoryScreen: 'AddCategoryScreen',
+  WelcomeScreen: 'WelcomeScreen',
+  RegisterScreen: 'RegisterScreen',
 };
