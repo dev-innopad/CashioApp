@@ -6,7 +6,7 @@ import Toast, {
 } from 'react-native-toast-message';
 import {useTheme} from '../../theme/ThemeProvider';
 import {AppColorTypes} from '../../theme/AppColors';
-import {FontSize} from '../../assets/fonts';
+import {AppFonts, FontSize} from '../../assets/fonts';
 
 interface ToastConfigParams {
   text1?: string;
@@ -79,7 +79,8 @@ const createStyles = (AppColors: AppColorTypes) => {
     textStyle: {
       color: AppColors.basicWhite,
       width: '90%',
-      fontSize: FontSize._14,
+      fontSize: FontSize._16,
+      fontFamily: AppFonts.MEDIUM,
       paddingLeft: 10,
     },
   });

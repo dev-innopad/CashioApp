@@ -11,6 +11,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {Images} from '../../assets/images';
 import {NavigationKeys} from '../../constants/navigationKeys';
+import {AppFonts, FontSize} from '../../assets/fonts';
 
 export default function WelcomeScreen({navigation}: any) {
   return (
@@ -53,9 +54,9 @@ export default function WelcomeScreen({navigation}: any) {
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={() =>
-                navigation.replace(NavigationKeys.CheckUserScreen)
+                navigation.navigate(NavigationKeys.CheckUserScreen)
               }>
-              <Text style={styles.secondaryButtonText}>I Have an Account</Text>
+              <Text style={styles.secondaryButtonText}>I have an account</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -80,14 +81,15 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: FontSize._40,
+    fontFamily: AppFonts.EXTRA_BOLD,
     color: '#fff',
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.REGULAR,
     color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
     lineHeight: 24,
@@ -111,8 +113,8 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._22,
+    fontFamily: AppFonts.MEDIUM,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
@@ -121,8 +123,8 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._22,
+    fontFamily: AppFonts.MEDIUM,
   },
   logo: {
     alignSelf: 'center',

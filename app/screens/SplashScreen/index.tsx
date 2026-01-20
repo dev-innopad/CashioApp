@@ -9,7 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import {Images} from '../../assets/images';
-import {AppFonts} from '../../assets/fonts';
+import {AppFonts, FontSize} from '../../assets/fonts';
 import index from '../OnboardingScreen';
 import {useSelector} from 'react-redux';
 import {NavigationKeys} from '../../constants/navigationKeys';
@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   appName: {
-    fontSize: 32,
+    fontSize: FontSize._40,
     fontFamily: AppFonts.EXTRA_BOLD,
     color: '#FFFFFF',
     letterSpacing: 1.2,
   },
   tagline: {
     marginTop: 6,
-    fontSize: 12,
+    fontSize: FontSize._20,
     fontFamily: AppFonts.MEDIUM,
     color: 'rgba(255,255,255,0.6)',
     letterSpacing: 1,

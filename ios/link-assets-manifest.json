@@ -1,0 +1,45 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "app/assets/fonts/SmoochSans-SemiBold.ttf",
+      "sha1": "77b39000370950bd396992cd97b7c6ec3823a439"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-ExtraBold.ttf",
+      "sha1": "19b9feeec17560113ddecf8cd777ebe9b5eded1f"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Light.ttf",
+      "sha1": "cc6f8e10fff1014d87146abc7747d0aaefea4bcb"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Regular.ttf",
+      "sha1": "b1f7496a76f7dfec295c620cfaa07bdfe2363af2"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-ExtraLight.ttf",
+      "sha1": "04cbb9859039df8d73abf08f8a2b1d28bbaa5a36"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Thin.ttf",
+      "sha1": "9b133eac632ae535584dcae5218596885f2f089d"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Bold.ttf",
+      "sha1": "c1dec223647af75f0747acb1eaf0ead176bc4db7"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Medium.ttf",
+      "sha1": "f7d41638dc0dc624b2baf037f05e7561e26972a6"
+    },
+    {
+      "path": "app/assets/fonts/SmoochSans-Black.ttf",
+      "sha1": "0483a0e83d425b16569bc18672eaa6bc4c27acb7"
+    },
+    {
+      "path": "app/assets/fonts/index.ts",
+      "sha1": "0ae78045765f5b6ce933085e3ce475427020f3b6"
+    }
+  ]
+}

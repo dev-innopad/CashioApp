@@ -30,23 +30,35 @@ const persistUserConfig = {
   key: `persistUserData-${AppName}`,
   storage: storage,
   // Persist everything in userData
-  whitelist: ['currentUser', 'users', 'expenses', 'isAuthenticated'],
+  whitelist: [
+    'currentUser',
+    'users',
+    'expenses',
+    'isAuthenticated',
+    'categories',
+  ],
 };
 
 const persistGoalsConfig = {
   key: `persistGoals-${AppName}`,
   storage: storage,
   // Persist the entire goals state
-  whitelist: ['goals', 'selectedGoalId', 'loading', 'error','financialSettings', 
-    'monthlyIncome',     
-    'autoSavePercentage', 
-    'investmentTipsFrequency', 
-    'budgetAlertsEnabled']
+  whitelist: [
+    'goals',
+    'selectedGoalId',
+    'loading',
+    'error',
+    'financialSettings',
+    'monthlyIncome',
+    'autoSavePercentage',
+    'investmentTipsFrequency',
+    'budgetAlertsEnabled',
+  ],
 };
 
 const appData_Slice = persistReducer(persistAppConfig as any, appDataSlice);
 const userData_slice = persistReducer(persistUserConfig as any, userDataSlice);
-const goals_slice = persistReducer(persistGoalsConfig as any, goalsReducer); 
+const goals_slice = persistReducer(persistGoalsConfig as any, goalsReducer);
 
 const additionalMiddleware = (store: any) => (next: any) => (action: any) => {
   return next(action);

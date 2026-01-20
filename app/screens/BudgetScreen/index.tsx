@@ -392,7 +392,8 @@ export default function FinancialReportScreen({navigation}: any) {
 
           <ScrollView
             style={styles.container}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}>
             {/* Net Worth Section */}
             <View style={styles.profitSection}>
               <View style={styles.profitHeader}>
@@ -1050,9 +1051,7 @@ export default function FinancialReportScreen({navigation}: any) {
                   <TouchableOpacity
                     style={[styles.modalButton, styles.confirmButton]}
                     onPress={handleUpdateAutoSave}>
-                    <Text style={styles.confirmButtonText}>
-                      Update Percentage
-                    </Text>
+                    <Text style={styles.confirmButtonText}>Update %</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1165,6 +1164,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     marginBottom: 40,
+  },
+  scrollContent: {
+    paddingBottom: 50,
   },
   header: {
     flexDirection: 'row',

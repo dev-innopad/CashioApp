@@ -21,15 +21,15 @@ const Fonts: {
 } = {
   ios: {
     SmoochSans: {
-      THIN: 'SmoochSans-Thin',
-      EXTRA_LIGHT: 'SmoochSans-ExtraLight',
-      LIGHT: 'SmoochSans-Light',
-      REGULAR: 'SmoochSans-Regular',
-      MEDIUM: 'SmoochSans-Medium',
-      SEMIBOLD: 'SmoochSans-SemiBold',
-      BOLD: 'SmoochSans-Bold',
-      EXTRA_BOLD: 'SmoochSans-ExtraBold',
-      BLACK: 'SmoochSans-Black',
+      THIN: 'SmoochSans Thin',
+      EXTRA_LIGHT: 'SmoochSans ExtraLight',
+      LIGHT: 'SmoochSans Light',
+      REGULAR: 'SmoochSans Regular',
+      MEDIUM: 'SmoochSans Medium',
+      SEMIBOLD: 'SmoochSans SemiBold',
+      BOLD: 'SmoochSans Bold',
+      EXTRA_BOLD: 'SmoochSans ExtraBold',
+      BLACK: 'SmoochSans Black',
     },
   },
   android: {

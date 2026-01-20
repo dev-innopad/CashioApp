@@ -15,6 +15,27 @@ import {useDispatch, useSelector} from 'react-redux';
 import {checkUserExists} from '../../store/reducers/userData.slice';
 import {_showToast} from '../../services/UIs/ToastConfig';
 import {NavigationKeys} from '../../constants/navigationKeys';
+import {AppFonts, FontSize} from '../../assets/fonts';
+import {windowHeight} from '../../constants/metrics';
+import * as Yup from 'yup';
+import {Formik} from 'formik';
+
+const getValidationSchema = (method: 'email' | 'phone') =>
+  Yup.object().shape({
+    email:
+      method === 'email'
+        ? Yup.string()
+            .email('Enter a valid email address')
+            .required('Email is required')
+        : Yup.string().notRequired(),
+
+    phone:
+      method === 'phone'
+        ? Yup.string()
+            .matches(/^\d{10}$/, 'Enter a valid 10-digit phone number')
+            .required('Phone number is required')
+        : Yup.string().notRequired(),
+  });
 
 export default function CheckUserScreen({navigation}: any) {
   const [email, setEmail] = useState('');
@@ -29,126 +50,129 @@ export default function CheckUserScreen({navigation}: any) {
   const userExists = useSelector((state: any) => state.userData.userExists);
   const users = useSelector((state: any) => state.userData.users);
 
-  const handleContinue = () => {
-    // Validate input
-    if (selectedMethod === 'email' && !email.trim()) {
-      _showToast('Please enter your email', 'error');
-      return;
-    }
+  // const handleContinue = () => {
+  //   switch (selectedMethod) {
+  //     case 'email': {
+  //       if (!email.trim()) {
+  //         _showToast('Please enter your email', 'error');
+  //         return;
+  //       }
 
-    if (selectedMethod === 'phone' && !phone.trim()) {
-      _showToast('Please enter your phone number', 'error');
-      return;
-    }
+  //       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //       if (!emailRegex.test(email)) {
+  //         _showToast('Please enter a valid email address', 'error');
+  //         return;
+  //       }
+  //       break;
+  //     }
 
-    // Validate email format
-    if (selectedMethod === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        _showToast('Please enter a valid email address', 'error');
-        return;
-      }
-    }
+  //     case 'phone': {
+  //       if (!phone.trim()) {
+  //         _showToast('Please enter your phone number', 'error');
+  //         return;
+  //       }
 
-    // Validate phone format (basic validation)
-    if (selectedMethod === 'phone' && phone.length < 10) {
-      _showToast('Please enter a valid phone number', 'error');
-      return;
-    }
+  //       if (phone.length < 10) {
+  //         _showToast('Please enter a valid phone number', 'error');
+  //         return;
+  //       }
+  //       break;
+  //     }
+
+  //     default:
+  //       return;
+  //   }
+
+  //   setLoading(true);
+  //   const userExists = checkIfUserExists();
+
+  //   setTimeout(() => {
+  //     setLoading(false);
+
+  //     if (userExists) {
+  //       _showToast('Account found! Enter your PIN', 'success');
+
+  //       navigation.navigate('PinScreen', {
+  //         [selectedMethod === 'email' ? 'email' : 'phone']:
+  //           selectedMethod === 'email' ? email : phone,
+  //         method: selectedMethod,
+  //         isExistingUser: true,
+  //       });
+  //     } else {
+  //       _showToast(
+  //         selectedMethod === 'email'
+  //           ? 'No account found with this email. Please sign up.'
+  //           : 'No account found with this phone number. Please sign up.',
+  //         'info',
+  //       );
+
+  //       navigation.navigate(NavigationKeys.RegisterScreen);
+  //     }
+  //   }, 800);
+  // };
+
+  const handleContinue = (values: {email: string; phone: string}) => {
+    const emailVal = values.email;
+    const phoneVal = values.phone;
 
     setLoading(true);
+    const userExists =
+      selectedMethod === 'email'
+        ? users.some(
+            (u: any) =>
+              u.email && u.email.toLowerCase() === emailVal.toLowerCase(),
+          )
+        : users.some(
+            (u: any) =>
+              u.phone &&
+              u.phone.replace(/\D/g, '') === phoneVal.replace(/\D/g, ''),
+          );
 
-    // Check if user exists in Redux
-    const userExists = checkIfUserExists();
-
-    // Simulate API call delay
     setTimeout(() => {
       setLoading(false);
 
       if (userExists) {
-        // User is registered - proceed to PIN screen for login
         _showToast('Account found! Enter your PIN', 'success');
+
         navigation.navigate('PinScreen', {
-          [selectedMethod === 'email' ? 'email' : 'phone']:
-            selectedMethod === 'email' ? email : phone,
+          [selectedMethod]: selectedMethod === 'email' ? emailVal : phoneVal,
           method: selectedMethod,
           isExistingUser: true,
         });
       } else {
-        // User is not registered - show message
-        if (selectedMethod === 'email') {
-          _showToast(
-            'No account found with this email. Please sign up.',
-            'info',
-          );
-        } else {
-          _showToast(
-            'No account found with this phone number. Please sign up.',
-            'info',
-          );
-        }
+        _showToast(
+          selectedMethod === 'email'
+            ? 'No account found with this email. Please sign up.'
+            : 'No account found with this phone number. Please sign up.',
+          'info',
+        );
 
-        // Option 1: Navigate to signup screen
-        // navigation.navigate('SignupScreen', {
-        //   [selectedMethod === 'email' ? 'email' : 'phone']:
-        //     selectedMethod === 'email' ? email : phone,
-        //   method: selectedMethod,
-        // });
-
-        // Option 2: Navigate to PIN screen for new registration
         navigation.navigate(NavigationKeys.RegisterScreen);
       }
     }, 800);
   };
 
-  // Function to check if user exists in Redux
   const checkIfUserExists = () => {
-    if (selectedMethod === 'email') {
-      // Check if any user has this email
-      const exists = users.some(
-        (user: any) =>
-          user.email && user.email.toLowerCase() === email.toLowerCase(),
-      );
-      return exists;
-    } else {
-      // Check if any user has this phone
-      // Remove any non-digit characters for comparison
-      const cleanPhone = phone.replace(/\D/g, '');
-      const exists = users.some((user: any) => {
-        if (!user.phone) return false;
-        const cleanUserPhone = user.phone.replace(/\D/g, '');
-        return cleanUserPhone === cleanPhone;
-      });
-      return exists;
+    switch (selectedMethod) {
+      case 'email':
+        return users.some(
+          (user: any) =>
+            user.email && user.email.toLowerCase() === email.toLowerCase(),
+        );
+
+      case 'phone': {
+        const cleanPhone = phone.replace(/\D/g, '');
+
+        return users.some((user: any) => {
+          if (!user.phone) return false;
+          const cleanUserPhone = user.phone.replace(/\D/g, '');
+          return cleanUserPhone === cleanPhone;
+        });
+      }
+
+      default:
+        return false;
     }
-  };
-
-  const handleContinueAlternative = () => {
-    if (selectedMethod === 'email' && !email.trim()) {
-      // Show error
-      return;
-    }
-
-    if (selectedMethod === 'phone' && !phone.trim()) {
-      // Show error
-      return;
-    }
-
-    setLoading(true);
-
-    // Check directly without Redux
-    const exists = checkIfUserExists();
-
-    setTimeout(() => {
-      setLoading(false);
-
-      navigation.navigate('PinScreen', {
-        [selectedMethod === 'email' ? 'email' : 'phone']:
-          selectedMethod === 'email' ? email : phone,
-        method: selectedMethod,
-        isExistingUser: exists,
-      });
-    }, 500);
   };
 
   return (
@@ -156,8 +180,12 @@ export default function CheckUserScreen({navigation}: any) {
       <KeyboardAvoidingView
         style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.topHeader}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
         <View style={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
               <Shield size={32} color="#F4C66A" />
@@ -210,7 +238,7 @@ export default function CheckUserScreen({navigation}: any) {
           </View>
 
           {/* Input Fields */}
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             {selectedMethod === 'email' ? (
               <View style={styles.inputWrapper}>
                 <Mail size={20} color="#666" style={styles.inputIcon} />
@@ -235,13 +263,110 @@ export default function CheckUserScreen({navigation}: any) {
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
+                  maxLength={10}
                 />
               </View>
             )}
-          </View>
+          </View> */}
+
+          <Formik
+            enableReinitialize
+            initialValues={{email: '', phone: ''}}
+            validationSchema={getValidationSchema(selectedMethod)}
+            onSubmit={values => handleContinue(values)}>
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              handleSubmit,
+            }) => (
+              <>
+                {/* Input Fields */}
+                <View style={styles.inputContainer}>
+                  {selectedMethod === 'email' ? (
+                    <>
+                      <View
+                        style={[
+                          styles.inputWrapper,
+                          touched.email &&
+                            errors.email && {
+                              borderColor: 'red',
+                              borderWidth: 1,
+                            },
+                        ]}>
+                        <Mail size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter your email"
+                          placeholderTextColor="#666"
+                          value={values.email}
+                          onChangeText={handleChange('email')}
+                          onBlur={handleBlur('email')}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                        />
+                      </View>
+
+                      {touched.email && errors.email && (
+                        <Text style={styles.errorText}>{errors.email}</Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <View
+                        style={[
+                          styles.inputWrapper,
+                          touched.phone &&
+                            errors.phone && {
+                              borderColor: 'red',
+                              borderWidth: 1,
+                            },
+                        ]}>
+                        <Phone
+                          size={20}
+                          color="#666"
+                          style={styles.inputIcon}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter your phone number"
+                          placeholderTextColor="#666"
+                          value={values.phone}
+                          onChangeText={handleChange('phone')}
+                          onBlur={handleBlur('phone')}
+                          keyboardType="phone-pad"
+                          maxLength={10}
+                        />
+                      </View>
+
+                      {touched.phone && errors.phone && (
+                        <Text style={styles.errorText}>{errors.phone}</Text>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Continue Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.continueButton,
+                    loading && styles.continueButtonDisabled,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={loading}>
+                  <Text style={styles.continueButtonText}>
+                    {loading ? 'Checking...' : 'Continue'}
+                  </Text>
+                  <ArrowRight size={20} color="#000" />
+                </TouchableOpacity>
+              </>
+            )}
+          </Formik>
 
           {/* Continue Button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.continueButton,
               loading && styles.continueButtonDisabled,
@@ -252,7 +377,7 @@ export default function CheckUserScreen({navigation}: any) {
               {loading ? 'Checking...' : 'Continue'}
             </Text>
             <ArrowRight size={20} color="#000" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -264,10 +389,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: 'center',
+    paddingBottom: windowHeight * 0.1,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 24,
   },
   iconContainer: {
     width: 60,
@@ -280,13 +419,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: FontSize._40,
+    fontFamily: AppFonts.BOLD,
     marginBottom: 8,
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 16,
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.REGULAR,
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -311,8 +451,8 @@ const styles = StyleSheet.create({
   },
   methodText: {
     color: '#999',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._18,
+    fontFamily: AppFonts.MEDIUM,
   },
   methodTextActive: {
     color: '#F4C66A',
@@ -334,7 +474,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: '#fff',
-    fontSize: 16,
+    fontSize: FontSize._18,
+    fontFamily: AppFonts.REGULAR,
   },
   continueButton: {
     flexDirection: 'row',
@@ -351,7 +492,14 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#000',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: FontSize._22,
+    fontFamily: AppFonts.MEDIUM,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    marginTop: 6,
+    marginLeft: 6,
+    fontFamily: AppFonts.REGULAR,
   },
 });

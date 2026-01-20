@@ -10,22 +10,40 @@
 		0C80B921A6F3F58F76C31292 /* libPods-Cashio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-Cashio.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		14924DC9594E4F5A8F8E54C6 /* index.ts in Resources */ = {isa = PBXBuildFile; fileRef = B157071473B341198629272D /* index.ts */; };
+		1B761067076D4E9686A3E3BC /* SmoochSans-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CBDDDD39278C48A7A4F5A895 /* SmoochSans-Thin.ttf */; };
+		26F1474C4C8A4A80B3CA978B /* SmoochSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 34BE845754854E6194A461D4 /* SmoochSans-Bold.ttf */; };
+		4ABF817DC35A4AA3A0EACF79 /* SmoochSans-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 091DEABB52414323A1F117BF /* SmoochSans-Black.ttf */; };
+		6C1E8102AC534EBC94BB8657 /* SmoochSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DD8F29FB9A3E44BAA6F459A7 /* SmoochSans-SemiBold.ttf */; };
 		6C231E46A9BC8ACE0C3C8103 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		6D055671EDE74EBD87B879FD /* SmoochSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 334ABAE46BD94CE99F9632DC /* SmoochSans-Regular.ttf */; };
+		749555515E234F25B475D902 /* SmoochSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3CF7F615719A40B692608355 /* SmoochSans-ExtraBold.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		DA124BDEDDAE4CAAA815A470 /* SmoochSans-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 086463BCB76F4995B6A274AC /* SmoochSans-Light.ttf */; };
+		DD99107819D240ECAF9AFF10 /* SmoochSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 15EC32A89EAF4A88AD4F1E71 /* SmoochSans-Medium.ttf */; };
+		FD46226A59094B9AA7A6DBE5 /* SmoochSans-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A62B2E8953A24265BD9FCD17 /* SmoochSans-ExtraLight.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		086463BCB76F4995B6A274AC /* SmoochSans-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Light.ttf"; path = "../app/assets/fonts/SmoochSans-Light.ttf"; sourceTree = "<group>"; };
+		091DEABB52414323A1F117BF /* SmoochSans-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Black.ttf"; path = "../app/assets/fonts/SmoochSans-Black.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Cashio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cashio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Cashio/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Cashio/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Cashio/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		15EC32A89EAF4A88AD4F1E71 /* SmoochSans-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Medium.ttf"; path = "../app/assets/fonts/SmoochSans-Medium.ttf"; sourceTree = "<group>"; };
+		334ABAE46BD94CE99F9632DC /* SmoochSans-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Regular.ttf"; path = "../app/assets/fonts/SmoochSans-Regular.ttf"; sourceTree = "<group>"; };
+		34BE845754854E6194A461D4 /* SmoochSans-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Bold.ttf"; path = "../app/assets/fonts/SmoochSans-Bold.ttf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-Cashio.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cashio.debug.xcconfig"; path = "Target Support Files/Pods-Cashio/Pods-Cashio.debug.xcconfig"; sourceTree = "<group>"; };
+		3CF7F615719A40B692608355 /* SmoochSans-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-ExtraBold.ttf"; path = "../app/assets/fonts/SmoochSans-ExtraBold.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-Cashio.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cashio.release.xcconfig"; path = "Target Support Files/Pods-Cashio/Pods-Cashio.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-Cashio.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Cashio.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Cashio/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Cashio/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		A62B2E8953A24265BD9FCD17 /* SmoochSans-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-ExtraLight.ttf"; path = "../app/assets/fonts/SmoochSans-ExtraLight.ttf"; sourceTree = "<group>"; };
 		B157071473B341198629272D /* index.ts */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = index.ts; path = ../app/assets/fonts/index.ts; sourceTree = "<group>"; };
+		CBDDDD39278C48A7A4F5A895 /* SmoochSans-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-Thin.ttf"; path = "../app/assets/fonts/SmoochSans-Thin.ttf"; sourceTree = "<group>"; };
+		DD8F29FB9A3E44BAA6F459A7 /* SmoochSans-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SmoochSans-SemiBold.ttf"; path = "../app/assets/fonts/SmoochSans-SemiBold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -45,6 +63,15 @@
 			isa = PBXGroup;
 			children = (
 				B157071473B341198629272D /* index.ts */,
+				DD8F29FB9A3E44BAA6F459A7 /* SmoochSans-SemiBold.ttf */,
+				3CF7F615719A40B692608355 /* SmoochSans-ExtraBold.ttf */,
+				086463BCB76F4995B6A274AC /* SmoochSans-Light.ttf */,
+				334ABAE46BD94CE99F9632DC /* SmoochSans-Regular.ttf */,
+				A62B2E8953A24265BD9FCD17 /* SmoochSans-ExtraLight.ttf */,
+				CBDDDD39278C48A7A4F5A895 /* SmoochSans-Thin.ttf */,
+				34BE845754854E6194A461D4 /* SmoochSans-Bold.ttf */,
+				15EC32A89EAF4A88AD4F1E71 /* SmoochSans-Medium.ttf */,
+				091DEABB52414323A1F117BF /* SmoochSans-Black.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -173,6 +200,15 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				6C231E46A9BC8ACE0C3C8103 /* PrivacyInfo.xcprivacy in Resources */,
 				14924DC9594E4F5A8F8E54C6 /* index.ts in Resources */,
+				6C1E8102AC534EBC94BB8657 /* SmoochSans-SemiBold.ttf in Resources */,
+				749555515E234F25B475D902 /* SmoochSans-ExtraBold.ttf in Resources */,
+				DA124BDEDDAE4CAAA815A470 /* SmoochSans-Light.ttf in Resources */,
+				6D055671EDE74EBD87B879FD /* SmoochSans-Regular.ttf in Resources */,
+				FD46226A59094B9AA7A6DBE5 /* SmoochSans-ExtraLight.ttf in Resources */,
+				1B761067076D4E9686A3E3BC /* SmoochSans-Thin.ttf in Resources */,
+				26F1474C4C8A4A80B3CA978B /* SmoochSans-Bold.ttf in Resources */,
+				DD99107819D240ECAF9AFF10 /* SmoochSans-Medium.ttf in Resources */,
+				4ABF817DC35A4AA3A0EACF79 /* SmoochSans-Black.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

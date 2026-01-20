@@ -1,5 +1,5 @@
 // screens/AddCategoryScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -30,9 +30,10 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import * as ImagePicker from 'react-native-image-picker';
-import { _showToast } from '../../services/UIs/ToastConfig';
+import {_showToast} from '../../services/UIs/ToastConfig';
 import AppModal from '../../components/AppModal';
 import * as Yup from 'yup';
+import {AppFonts, FontSize} from '../../assets/fonts';
 
 // Default category icons
 const defaultIcons = [
@@ -93,11 +94,11 @@ const newCategorySchema = Yup.object().shape({
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must not exceed 50 characters'),
   budget: Yup.string()
-    .test('is-valid-number', 'Budget must be a valid number', (value) => {
+    .test('is-valid-number', 'Budget must be a valid number', value => {
       if (!value || value.trim() === '') return true; // Allow empty (optional)
       return !isNaN(Number(value)) && Number(value) >= 0;
     })
-    .test('max-length', 'Budget is too large', (value) => {
+    .test('max-length', 'Budget is too large', value => {
       if (!value) return true;
       return Number(value) <= 1000000; // Max 1 million
     }),
@@ -116,7 +117,7 @@ const editCategorySchema = Yup.object().shape({
     .required('Budget is required'),
 });
 
-export default function AddCategoryScreen({ navigation, route }: any) {
+export default function AddCategoryScreen({navigation, route}: any) {
   const existingCategories: Category[] = route.params?.categories || [];
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -172,7 +173,6 @@ export default function AddCategoryScreen({ navigation, route }: any) {
   const [showCustomIconModal, setShowCustomIconModal] = useState(false);
   const [customIcon, setCustomIcon] = useState('');
 
-
   // Update useEffect for back handler
   useEffect(() => {
     // Check if there are unsaved changes
@@ -193,7 +193,6 @@ export default function AddCategoryScreen({ navigation, route }: any) {
       navigation.goBack();
     }
   };
-
 
   // Save categories and go back
   const handleSave = () => {
@@ -255,7 +254,7 @@ export default function AddCategoryScreen({ navigation, route }: any) {
       'Delete Category',
       'Are you sure you want to delete this category? All expenses in this category will be deleted.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           style: 'destructive',
@@ -270,9 +269,9 @@ export default function AddCategoryScreen({ navigation, route }: any) {
   // Pick icon from emoji
   const selectIcon = (icon: string) => {
     if (editingCategory) {
-      setEditingCategory({ ...editingCategory, icon });
+      setEditingCategory({...editingCategory, icon});
     } else {
-      setNewCategory({ ...newCategory, icon });
+      setNewCategory({...newCategory, icon});
     }
     setShowIconPicker(false);
   };
@@ -280,9 +279,9 @@ export default function AddCategoryScreen({ navigation, route }: any) {
   // Select color
   const selectColor = (color: string) => {
     if (editingCategory) {
-      setEditingCategory({ ...editingCategory, color });
+      setEditingCategory({...editingCategory, color});
     } else {
-      setNewCategory({ ...newCategory, color });
+      setNewCategory({...newCategory, color});
     }
     setShowColorPicker(false);
   };
@@ -317,13 +316,11 @@ export default function AddCategoryScreen({ navigation, route }: any) {
 
   return (
     <AppMainContainer hideTop hideBottom>
-      <LinearGradient colors={['#141326', '#24224A']} style={{ flex: 1 }}>
+      <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{flex: 1}}>
           <View style={styles.header}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.headerButton}>
+            <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
               <ChevronLeft size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Manage Categories</Text>
@@ -348,9 +345,9 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                     style={styles.textInput}
                     value={newCategory.name}
                     onChangeText={text =>
-                      setNewCategory({ ...newCategory, name: text })
+                      setNewCategory({...newCategory, name: text})
                     }
-                    placeholder="e.g., Groceries, Rent, etc."
+                    placeholder="e.g., Groceries"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   />
                 </View>
@@ -360,10 +357,10 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                   <View style={styles.budgetInput}>
                     <DollarSign size={20} color="#F4C66A" />
                     <TextInput
-                      style={[styles.textInput, { flex: 1 }]}
+                      style={[styles.textInput, {flex: 1}]}
                       value={newCategory.budget}
                       onChangeText={text =>
-                        setNewCategory({ ...newCategory, budget: text })
+                        setNewCategory({...newCategory, budget: text})
                       }
                       placeholder="0.00"
                       placeholderTextColor="rgba(255, 255, 255, 0.5)"
@@ -382,7 +379,7 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                   <View
                     style={[
                       styles.iconPreview,
-                      { backgroundColor: newCategory.color },
+                      {backgroundColor: newCategory.color},
                     ]}>
                     <Text style={styles.iconText}>{newCategory.icon}</Text>
                   </View>
@@ -401,7 +398,7 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                   <View
                     style={[
                       styles.colorPreview,
-                      { backgroundColor: newCategory.color },
+                      {backgroundColor: newCategory.color},
                     ]}
                   />
                   <Text style={styles.colorSelectorText}>
@@ -430,7 +427,7 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                     <View
                       style={[
                         styles.categoryIcon,
-                        { backgroundColor: category.color },
+                        {backgroundColor: category.color},
                       ]}>
                       <Text style={styles.categoryIconText}>
                         {category.icon}
@@ -545,17 +542,17 @@ export default function AddCategoryScreen({ navigation, route }: any) {
                       <View
                         style={[
                           styles.colorOptionCircle,
-                          { backgroundColor: color },
+                          {backgroundColor: color},
                         ]}
                       />
                       {(editingCategory?.color === color ||
                         newCategory.color === color) && (
-                          <Check
-                            size={16}
-                            color="#fff"
-                            style={styles.colorSelected}
-                          />
-                        )}
+                        <Check
+                          size={16}
+                          color="#fff"
+                          style={styles.colorSelected}
+                        />
+                      )}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -612,7 +609,6 @@ export default function AddCategoryScreen({ navigation, route }: any) {
               navigation.goBack();
             }}
           />
-
         </SafeAreaView>
       </LinearGradient>
     </AppMainContainer>
@@ -642,8 +638,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: FontSize._24,
+    fontFamily: AppFonts.EXTRA_BOLD,
   },
   saveButton: {
     flexDirection: 'row',
@@ -656,8 +652,8 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#F4C66A',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.MEDIUM,
   },
   addCategoryContainer: {
     backgroundColor: '#1F1D3A',
@@ -667,8 +663,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: FontSize._24,
+    fontFamily: AppFonts.BOLD,
     marginBottom: 20,
   },
   formRow: {
@@ -681,7 +677,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     marginBottom: 8,
   },
   textInput: {
@@ -689,7 +686,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     color: '#fff',
-    fontSize: 16,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   budgetInput: {
     flexDirection: 'row',
@@ -717,11 +715,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconText: {
-    fontSize: 24,
+    fontSize: FontSize._24,
+    fontFamily: AppFonts.REGULAR,
   },
   iconSelectorText: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
   colorSection: {
@@ -742,7 +742,8 @@ const styles = StyleSheet.create({
   },
   colorSelectorText: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
   addButton: {
@@ -756,8 +757,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.BOLD,
   },
   categoriesContainer: {
     backgroundColor: '#1F1D3A',
@@ -788,20 +789,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryIconText: {
-    fontSize: 24,
+    fontSize: FontSize._24,
+    fontFamily: AppFonts.REGULAR,
   },
   categoryDetails: {
     flex: 1,
   },
   categoryName: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._18,
+    fontFamily: AppFonts.BOLD,
     marginBottom: 4,
   },
   categoryBudget: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
   },
   categoryActions: {
     flexDirection: 'row',
@@ -835,8 +838,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: FontSize._18,
+    fontFamily: AppFonts.BOLD,
   },
   iconsGrid: {
     marginBottom: 20,
@@ -862,7 +865,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconOptionText: {
-    fontSize: 28,
+    fontSize: FontSize._24,
+    fontFamily: AppFonts.REGULAR,
   },
   colorsGrid: {
     flexDirection: 'row',
@@ -882,8 +886,8 @@ const styles = StyleSheet.create({
   },
   customIconButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   colorOption: {
     width: 50,
@@ -913,8 +917,8 @@ const styles = StyleSheet.create({
   },
   customIconOptionText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
 });

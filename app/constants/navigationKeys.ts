@@ -1,5 +1,3 @@
-import ReportScreen from '../screens/ReportScreen';
-
 export const NavigationKeys = {
   SplashScreen: 'SplashScreen',
   AuthNavigator: 'AuthNavigator',
@@ -22,4 +20,5 @@ export const NavigationKeys = {
   WelcomeScreen: 'WelcomeScreen',
   RegisterScreen: 'RegisterScreen',
   CheckUserScreen: 'CheckUserScreen',
+  AllTransactionsScreen: 'AllTransactionsScreen',
 };

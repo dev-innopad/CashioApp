@@ -7,6 +7,7 @@ import {
   StatusBar,
   SafeAreaView,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
@@ -44,8 +45,83 @@ import {
   Zap,
   Cloud,
   Package,
+  ChevronRight,
 } from 'lucide-react-native';
 import {NavigationKeys} from '../../constants/navigationKeys';
+import {AppFonts, FontSize} from '../../assets/fonts';
+
+// Icon mapping function to ensure consistency
+const getCategoryIcon = (categoryName: string) => {
+  if (!categoryName) return ShoppingCart;
+
+  const lowerName = categoryName.toLowerCase();
+
+  if (
+    lowerName.includes('food') ||
+    lowerName.includes('grocer') ||
+    lowerName.includes('restaurant')
+  )
+    return Utensils;
+  if (
+    lowerName.includes('transport') ||
+    lowerName.includes('car') ||
+    lowerName.includes('gas')
+  )
+    return Car;
+  if (lowerName.includes('shop') || lowerName.includes('retail'))
+    return ShoppingBag;
+  if (
+    lowerName.includes('home') ||
+    lowerName.includes('rent') ||
+    lowerName.includes('mortgage')
+  )
+    return Home;
+  if (
+    lowerName.includes('entertain') ||
+    lowerName.includes('movie') ||
+    lowerName.includes('netflix')
+  )
+    return Tv;
+  if (lowerName.includes('health') || lowerName.includes('medical'))
+    return Heart;
+  if (lowerName.includes('education') || lowerName.includes('school'))
+    return GraduationCap;
+  if (lowerName.includes('coffee') || lowerName.includes('cafe')) return Coffee;
+  if (
+    lowerName.includes('travel') ||
+    lowerName.includes('flight') ||
+    lowerName.includes('hotel')
+  )
+    return Plane;
+  if (lowerName.includes('fuel') || lowerName.includes('gasoline')) return Fuel;
+  if (lowerName.includes('gym') || lowerName.includes('fitness'))
+    return Dumbbell;
+  if (lowerName.includes('gift') || lowerName.includes('donation')) return Gift;
+  if (lowerName.includes('internet') || lowerName.includes('wifi')) return Wifi;
+  if (lowerName.includes('phone') || lowerName.includes('mobile')) return Phone;
+  if (lowerName.includes('music') || lowerName.includes('spotify'))
+    return Music;
+  if (lowerName.includes('game') || lowerName.includes('gaming'))
+    return Gamepad2;
+  if (lowerName.includes('subscription') || lowerName.includes('cloud'))
+    return Cloud;
+  if (lowerName.includes('delivery') || lowerName.includes('package'))
+    return Package;
+  if (
+    lowerName.includes('bill') ||
+    lowerName.includes('payment') ||
+    lowerName.includes('credit')
+  )
+    return CreditCard;
+  if (lowerName.includes('savings') || lowerName.includes('investment'))
+    return PiggyBank;
+  if (lowerName.includes('book') || lowerName.includes('learning')) return Book;
+  if (lowerName.includes('bus') || lowerName.includes('train')) return Bus;
+  if (lowerName.includes('electricity') || lowerName.includes('power'))
+    return Zap;
+
+  return ShoppingCart; // default
+};
 
 export default function HomeScreen({navigation}: any) {
   // Get all data from Redux
@@ -54,22 +130,9 @@ export default function HomeScreen({navigation}: any) {
   const categories = useSelector(
     (state: any) => state.userData.categories || [],
   );
-  // const userName = useSelector(
-  //   (state: any) => state.userData.userName || 'User',
-  // );
 
   const userName = currentUser?.name || 'User';
-  // const monthlyBudget = useSelector(
-  //   (state: any) => state.userData.monthlyBudget || 30000,
-  // );
-
   const monthlyBudget = currentUser?.monthlyBudget || 30000;
-
-  console.log('Data from redux:', {
-    expensesCount: expenses.length,
-    categoriesCount: categories.length,
-    monthlyBudget,
-  });
 
   // Calculate dynamic totals
   const calculateTotals = () => {
@@ -103,95 +166,59 @@ export default function HomeScreen({navigation}: any) {
 
   const totals = calculateTotals();
 
-  // Get category totals dynamically
-  const getCategoryTotals = () => {
-    if (
-      !expenses ||
-      expenses.length === 0 ||
-      !categories ||
-      categories.length === 0
-    ) {
+  // Get all transactions with consistent icons
+  const getAllTransactions = () => {
+    if (!expenses || expenses.length === 0) {
       return [];
     }
 
-    // Create a map of category budgets
-    const categoryBudgetMap: {[key: string]: number} = {};
-    categories.forEach((cat: any) => {
-      categoryBudgetMap[cat.name] = cat.budget || 0;
-    });
-
-    // Initialize category totals
-    const categoryTotals: {
-      [key: string]: {spent: number; budget: number; color: string; icon: any};
-    } = {};
-
-    // Set defaults from categories
-    categories.forEach((cat: any) => {
-      // Map category name to icon
-      let icon = ShoppingCart; // default
-      if (cat.name?.toLowerCase().includes('food')) icon = Utensils;
-      else if (cat.name?.toLowerCase().includes('transport')) icon = Car;
-      else if (cat.name?.toLowerCase().includes('shopping')) icon = ShoppingBag;
-      else if (cat.name?.toLowerCase().includes('home')) icon = Home;
-      else if (cat.name?.toLowerCase().includes('entertainment')) icon = Tv;
-      else if (cat.name?.toLowerCase().includes('health')) icon = Heart;
-      else if (cat.name?.toLowerCase().includes('education'))
-        icon = GraduationCap;
-      else if (cat.name?.toLowerCase().includes('bills')) icon = CreditCard;
-      else if (cat.name?.toLowerCase().includes('travel')) icon = Plane;
-      else if (cat.name?.toLowerCase().includes('fuel')) icon = Fuel;
-      else if (cat.name?.toLowerCase().includes('coffee')) icon = Coffee;
-      else if (cat.name?.toLowerCase().includes('movie')) icon = Film;
-      else if (cat.name?.toLowerCase().includes('music')) icon = Music;
-      else if (cat.name?.toLowerCase().includes('gym')) icon = Dumbbell;
-      else if (cat.name?.toLowerCase().includes('gift')) icon = Gift;
-      else if (cat.name?.toLowerCase().includes('internet')) icon = Wifi;
-      else if (cat.name?.toLowerCase().includes('phone')) icon = Phone;
-      else if (cat.name?.toLowerCase().includes('electricity')) icon = Zap;
-      else if (cat.name?.toLowerCase().includes('subscription')) icon = Cloud;
-      else if (cat.name?.toLowerCase().includes('delivery')) icon = Package;
-
-      categoryTotals[cat.name] = {
-        spent: 0,
-        budget: cat.budget || 0,
-        color: cat.color || '#F97316',
-        icon: icon,
-      };
-    });
-
-    // Calculate spent per category
-    expenses.forEach((expense: any) => {
+    return expenses.slice(0, 10).map((expense: any, index: number) => {
+      // Get category name
       let categoryName = '';
-
       if (typeof expense.category === 'string') {
         categoryName = expense.category;
       } else if (expense.category && expense.category.name) {
         categoryName = expense.category.name;
       }
 
-      if (categoryName && categoryTotals[categoryName]) {
-        categoryTotals[categoryName].spent += expense.amount || 0;
+      // Get category details for color
+      let color = '#F97316';
+      const categoryDetails = categories.find(
+        (cat: any) => cat.name === categoryName,
+      );
+      if (categoryDetails) {
+        color = categoryDetails.color || '#F97316';
       }
-    });
 
-    // Convert to array format
-    return Object.entries(categoryTotals)
-      .map(([title, data], index) => ({
-        id: (index + 1).toString(),
-        title,
-        percentage:
-          data.budget > 0
-            ? Math.min(Math.round((data.spent / data.budget) * 100), 100)
-            : 0,
-        spent: data.spent,
-        total: data.budget,
-        color: data.color,
-        icon: data.icon,
-      }))
-      .filter(cat => cat.total > 0); // Only show categories with budget
+      // Use consistent icon mapping
+      const icon = getCategoryIcon(categoryName);
+
+      // Format date
+      const date = new Date(expense.date);
+      const formattedDate = `${date.toLocaleString('default', {
+        month: 'short',
+      })} ${date.getDate()}, ${date.getFullYear()}`;
+
+      // Truncate description if too long
+      const title = expense.description || 'Transaction';
+      const truncatedTitle =
+        title.length > 30 ? title.substring(0, 30) + '...' : title;
+
+      return {
+        id: expense.id || `expense-${index}`,
+        title: truncatedTitle,
+        fullTitle: title,
+        description: categoryName || 'Category',
+        date: formattedDate,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
+        color,
+        icon,
+        categoryName,
+      };
+    });
   };
 
-  const budgetCategoriesData = getCategoryTotals();
+  const allTransactionsData = getAllTransactions();
 
   // Get recent expenses (last 3 expenses)
   const getRecentExpenses = () => {
@@ -216,28 +243,17 @@ export default function HomeScreen({navigation}: any) {
         categoryName = expense.category.name;
       }
 
-      // Get category details for icon and color
-      let icon = ShoppingCart;
+      // Get category details for color
       let color = '#F97316';
-
       const categoryDetails = categories.find(
         (cat: any) => cat.name === categoryName,
       );
       if (categoryDetails) {
         color = categoryDetails.color || '#F97316';
-        // Simple icon mapping based on category name
-        if (categoryName?.toLowerCase().includes('food')) icon = Utensils;
-        else if (categoryName?.toLowerCase().includes('transport')) icon = Car;
-        else if (categoryName?.toLowerCase().includes('shopping'))
-          icon = ShoppingBag;
-        else if (categoryName?.toLowerCase().includes('home')) icon = Home;
-        else if (categoryName?.toLowerCase().includes('entertainment'))
-          icon = Tv;
-        else if (categoryName?.toLowerCase().includes('fuel')) icon = Fuel;
-        else if (categoryName?.toLowerCase().includes('coffee')) icon = Coffee;
-        else if (categoryName?.toLowerCase().includes('movie')) icon = Film;
-        else if (categoryName?.toLowerCase().includes('music')) icon = Music;
       }
+
+      // Use consistent icon mapping
+      const icon = getCategoryIcon(categoryName);
 
       // Format date
       const date = new Date(expense.date);
@@ -246,75 +262,26 @@ export default function HomeScreen({navigation}: any) {
         {month: 'short'},
       )} ${date.getFullYear().toString().slice(-2)}`;
 
+      // Truncate description if too long
+      const title = expense.description || 'Expense';
+      const truncatedTitle =
+        title.length > 25 ? title.substring(0, 25) + '...' : title;
+
       return {
-        id: expense.id || index.toString(),
-        title: expense.description || 'Expense',
+        id: expense.id || `recent-${index}`,
+        title: truncatedTitle,
+        fullTitle: title,
         description: categoryName || 'Category',
         date: formattedDate,
         amount: `$${(expense.amount || 0).toLocaleString()}`,
-        icon,
         color,
+        icon,
+        categoryName,
       };
     });
   };
 
   const recentExpensesData = getRecentExpenses();
-
-  // Get all transactions (for the transactions section)
-  const getAllTransactions = () => {
-    if (!expenses || expenses.length === 0) {
-      return [];
-    }
-
-    // Take first 5 expenses for transactions section
-    const firstFiveExpenses = expenses.slice(0, 5);
-
-    return firstFiveExpenses.map((expense: any, index: number) => {
-      // Get category name
-      let categoryName = '';
-      if (typeof expense.category === 'string') {
-        categoryName = expense.category;
-      } else if (expense.category && expense.category.name) {
-        categoryName = expense.category.name;
-      }
-
-      // Get category details for icon and color
-      let icon = ShoppingCart;
-      let color = '#F97316';
-
-      const categoryDetails = categories.find(
-        (cat: any) => cat.name === categoryName,
-      );
-      if (categoryDetails) {
-        color = categoryDetails.color || '#F97316';
-        if (categoryName?.toLowerCase().includes('food')) icon = Utensils;
-        else if (categoryName?.toLowerCase().includes('transport')) icon = Car;
-        else if (categoryName?.toLowerCase().includes('shopping'))
-          icon = ShoppingBag;
-        else if (categoryName?.toLowerCase().includes('home')) icon = Home;
-        else if (categoryName?.toLowerCase().includes('entertainment'))
-          icon = Tv;
-        else if (categoryName?.toLowerCase().includes('fuel')) icon = Fuel;
-      }
-
-      // Format date
-      const date = new Date(expense.date);
-      const formattedDate = `${date.toLocaleString('default', {
-        month: 'short',
-      })} ${date.getDate()}, ${date.getFullYear()}`;
-
-      return {
-        id: expense.id || index.toString(),
-        title: expense.description || 'Transaction',
-        date: formattedDate,
-        amount: `$${(expense.amount || 0).toLocaleString()}`,
-        color,
-        icon,
-      };
-    });
-  };
-
-  const transactionsData = getAllTransactions();
 
   // Calculate savings percentage
   const calculateSavingsPercentage = () => {
@@ -349,6 +316,14 @@ export default function HomeScreen({navigation}: any) {
     </View>
   );
 
+  // Navigation to All Transactions screen
+  const handleViewAllTransactions = () => {
+    navigation.navigate('AllTransactionsScreen', {
+      transactions: allTransactionsData,
+      totals: totals,
+    });
+  };
+
   return (
     <AppMainContainer hideTop hideBottom>
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
@@ -357,7 +332,12 @@ export default function HomeScreen({navigation}: any) {
           <View style={styles.header}>
             <View>
               <Text style={styles.welcomeText}>Welcome Back</Text>
-              <Text style={styles.userName}>{userName}</Text>
+              <Text
+                style={styles.userName}
+                numberOfLines={1}
+                ellipsizeMode="tail">
+                {userName}
+              </Text>
             </View>
             <Pressable
               style={styles.notificationIcon}
@@ -369,7 +349,8 @@ export default function HomeScreen({navigation}: any) {
           </View>
           <ScrollView
             style={styles.container}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}>
             {/* Monthly Summary */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Monthly Summary</Text>
@@ -397,55 +378,6 @@ export default function HomeScreen({navigation}: any) {
               </View>
             </View>
 
-            {/* Budget Tracking */}
-            {/* <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Budget Tracking</Text>
-              </View>
-
-              {budgetCategoriesData.length > 0 ? (
-                budgetCategoriesData.map(category => {
-                  const IconComponent = category.icon;
-                  return (
-                    <View key={category.id} style={styles.budgetCard}>
-                      <View style={styles.budgetHeader}>
-                        <View style={styles.budgetTitleContainer}>
-                          <IconComponent size={20} color={category.color} />
-                          <Text style={styles.budgetTitle}>{category.title}</Text>
-                        </View>
-                        <Text
-                          style={[
-                            styles.budgetPercentage,
-                            {color: category.color},
-                          ]}>
-                          {category.percentage}%
-                        </Text>
-                      </View>
-                      <View style={styles.progressBarContainer}>
-                        <View style={styles.progressBarBackground}>
-                          <View
-                            style={[
-                              styles.progressBarFill,
-                              {
-                                width: `${category.percentage}%`,
-                                backgroundColor: category.color,
-                              },
-                            ]}
-                          />
-                        </View>
-                      </View>
-                      <Text style={styles.budgetAmount}>
-                        Spent ${category.spent.toLocaleString()} | $
-                        {category.total.toLocaleString()}
-                      </Text>
-                    </View>
-                  );
-                })
-              ) : (
-                null
-              )}
-            </View> */}
-
             {/* Recent Expenses */}
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
@@ -465,7 +397,10 @@ export default function HomeScreen({navigation}: any) {
                           <IconComponent size={24} color={expense.color} />
                         </View>
                         <View style={styles.expenseInfo}>
-                          <Text style={styles.expenseTitle}>
+                          <Text
+                            style={styles.expenseTitle}
+                            numberOfLines={1}
+                            ellipsizeMode="tail">
                             {expense.title}
                           </Text>
                           <Text style={styles.expenseDescription}>
@@ -488,11 +423,20 @@ export default function HomeScreen({navigation}: any) {
                   )}
             </View>
 
-            {/* Your Transactions */}
+            {/* All Transactions */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>My Transactions</Text>
-              {transactionsData.length > 0
-                ? transactionsData.map(transaction => {
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>My Transactions</Text>
+                <TouchableOpacity
+                  style={styles.seeAllButton}
+                  onPress={handleViewAllTransactions}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                  <ChevronRight size={16} color="#F4C66A" />
+                </TouchableOpacity>
+              </View>
+
+              {allTransactionsData.length > 0
+                ? allTransactionsData.slice(0, 3).map(transaction => {
                     const IconComponent = transaction.icon;
                     return (
                       <View key={transaction.id} style={styles.transactionCard}>
@@ -504,7 +448,10 @@ export default function HomeScreen({navigation}: any) {
                           <IconComponent size={20} color="#fff" />
                         </View>
                         <View style={styles.transactionInfo}>
-                          <Text style={styles.transactionTitle}>
+                          <Text
+                            style={styles.transactionTitle}
+                            numberOfLines={1}
+                            ellipsizeMode="tail">
                             {transaction.title}
                           </Text>
                           <Text style={styles.transactionDate}>
@@ -524,7 +471,7 @@ export default function HomeScreen({navigation}: any) {
                   )}
             </View>
 
-            {/* Savings Progress (Optional) */}
+            {/* Savings Progress */}
             {totals.totalBudget > 0 && (
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>Savings Progress</Text>
@@ -565,8 +512,10 @@ export default function HomeScreen({navigation}: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
-    marginBottom: 40,
+    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row',
@@ -578,13 +527,15 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   userName: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: FontSize._28,
+    fontFamily: AppFonts.BOLD,
     marginTop: 4,
+    maxWidth: 250, // Prevent overflow
   },
   notificationIcon: {
     width: 40,
@@ -599,19 +550,25 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
+    fontSize: FontSize._22,
+    fontFamily: AppFonts.BOLD,
+    // marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   seeAllText: {
     color: '#F4C66A',
-    fontSize: 14,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   summaryCards: {
     flexDirection: 'row',
@@ -629,59 +586,17 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     marginTop: 8,
     marginBottom: 8,
     textAlign: 'center',
   },
   summaryValue: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: FontSize._28,
+    fontFamily: AppFonts.BOLD,
     textAlign: 'center',
-  },
-  budgetCard: {
-    backgroundColor: '#1F1D3A',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  budgetTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  budgetTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  budgetPercentage: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressBarContainer: {
-    marginBottom: 8,
-  },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  budgetAmount: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
   },
   expenseCard: {
     flexDirection: 'row',
@@ -701,29 +616,34 @@ const styles = StyleSheet.create({
   },
   expenseInfo: {
     flex: 1,
+    marginRight: 12,
+    minWidth: 0, // Important for text truncation
   },
   expenseTitle: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.BOLD,
     marginBottom: 4,
   },
   expenseDescription: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
   },
   expenseRight: {
     alignItems: 'flex-end',
+    minWidth: 80, // Ensure amount doesn't get squeezed
   },
   expenseDate: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._12,
+    fontFamily: AppFonts.REGULAR,
     marginBottom: 4,
   },
   expenseAmount: {
     color: '#FF6B6B',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.BOLD,
   },
   transactionCard: {
     flexDirection: 'row',
@@ -743,21 +663,26 @@ const styles = StyleSheet.create({
   },
   transactionInfo: {
     flex: 1,
+    marginRight: 12,
+    minWidth: 0,
   },
   transactionTitle: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.BOLD,
     marginBottom: 4,
   },
   transactionDate: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
   },
   transactionAmount: {
     color: '#FF6B6B',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.BOLD,
+    minWidth: 70,
+    textAlign: 'right',
   },
   emptyState: {
     alignItems: 'center',
@@ -765,18 +690,18 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
-    marginTop: 20,
   },
   emptyStateTitle: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: FontSize._28,
+    fontFamily: AppFonts.BOLD,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateText: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     textAlign: 'center',
     paddingHorizontal: 20,
     marginBottom: 20,
@@ -789,8 +714,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.MEDIUM,
   },
   savingsCard: {
     backgroundColor: '#1F1D3A',
@@ -805,12 +730,26 @@ const styles = StyleSheet.create({
   },
   savingsTitle: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.MEDIUM,
   },
   savingsAmount: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     marginTop: 8,
+  },
+  progressBarContainer: {
+    marginBottom: 8,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
   },
 });

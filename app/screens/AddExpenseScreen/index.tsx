@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import debounce from 'lodash.debounce';
 import AppMainContainer from '../../components/AppMainContainer';
 import {
   ChevronLeft,
@@ -34,6 +35,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {useDispatch} from 'react-redux';
 import {addExpense} from '../../store/reducers/userData.slice';
 import {_showToast} from '../../services/UIs/ToastConfig';
+import {AppFonts, FontSize} from '../../assets/fonts';
+import {fetchAddressSuggestions} from '../../services/addressService';
 
 interface Category {
   id: string;
@@ -94,6 +97,12 @@ export default function AddExpenseScreen({navigation, route}: any) {
 
   const dispatch = useDispatch();
 
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    Array<{label: string; fullAddress: string}>
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [expense, setExpense] = useState<Partial<Expense>>({
     amount: 0,
@@ -107,6 +116,22 @@ export default function AddExpenseScreen({navigation, route}: any) {
   const [receipt, setReceipt] = useState<any>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  const handleAddressSearch = useCallback(
+    debounce(async (query: string) => {
+      if (query.length < 3) {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      setIsSearching(true);
+      const suggestions = await fetchAddressSuggestions(query);
+      setAddressSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+      setIsSearching(false);
+    }, 300),
+    [],
+  );
 
   // Load categories if passed as route params
   useEffect(() => {
@@ -379,7 +404,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
                 <Text style={styles.inputLabel}>Location (Optional)</Text>
                 <View style={styles.locationInput}>
                   <MapPin size={20} color="#F4C66A" />
-                  <TextInput
+                  {/* <TextInput
                     style={[styles.textInput, {flex: 1}]}
                     value={expense.location}
                     onChangeText={text =>
@@ -387,7 +412,41 @@ export default function AddExpenseScreen({navigation, route}: any) {
                     }
                     placeholder="Where did you spend?"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  /> */}
+                  <TextInput
+                    style={[styles.textInput, {flex: 1}]}
+                    value={expense.location}
+                    onChangeText={text => {
+                      setExpense({...expense, location: text});
+                      handleAddressSearch(text);
+                    }}
+                    onFocus={() => {
+                      if (addressSuggestions.length > 0)
+                        setShowSuggestions(true);
+                    }}
+                    placeholder="Start typing an address..."
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   />
+                  {showSuggestions && addressSuggestions.length > 0 && (
+                    <View style={styles.suggestionsContainer}>
+                      {addressSuggestions.map((item, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.suggestionItem}
+                          onPress={() => {
+                            setExpense({
+                              ...expense,
+                              location: item.fullAddress,
+                            });
+                            setShowSuggestions(false);
+                          }}>
+                          <Text style={styles.suggestionText}>
+                            {item.fullAddress}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -555,8 +614,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: FontSize._25,
+    fontFamily: AppFonts.EXTRA_BOLD,
+    // fontWeight: '700',
   },
   saveButton: {
     flexDirection: 'row',
@@ -569,8 +629,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#F4C66A',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
+    // fontWeight: '600',
   },
   amountSection: {
     backgroundColor: '#1F1D3A',
@@ -581,7 +642,8 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     marginBottom: 12,
   },
   amountInputContainer: {
@@ -591,8 +653,8 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     color: '#fff',
-    fontSize: 48,
-    fontWeight: '700',
+    fontSize: FontSize._38,
+    fontFamily: AppFonts.EXTRA_BOLD,
     flex: 1,
     // textAlign: 'center',
   },
@@ -607,7 +669,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     marginBottom: 8,
   },
   categoryHeader: {
@@ -627,15 +690,16 @@ const styles = StyleSheet.create({
   },
   addCategoryButtonText: {
     color: '#F4C66A',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
   },
   textInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 12,
     color: '#fff',
-    fontSize: 16,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   categorySelector: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -655,17 +719,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryIconText: {
-    fontSize: 18,
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.REGULAR,
   },
   categoryName: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.MEDIUM,
     flex: 1,
   },
   placeholderText: {
     color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 16,
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   dateSelector: {
     flexDirection: 'row',
@@ -677,8 +743,8 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
   locationInput: {
@@ -702,8 +768,8 @@ const styles = StyleSheet.create({
   },
   receiptOptionText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
   receiptPreview: {
@@ -751,8 +817,8 @@ const styles = StyleSheet.create({
   },
   quickAmountText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
   },
   modalOverlay: {
     position: 'absolute',
@@ -778,8 +844,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.MEDIUM,
   },
   categoriesList: {
     maxHeight: 400,
@@ -806,12 +872,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryOptionIconText: {
-    fontSize: 20,
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.REGULAR,
   },
   categoryOptionName: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
   selectedIndicator: {
@@ -842,8 +909,42 @@ const styles = StyleSheet.create({
   },
   addNewText: {
     color: '#F4C66A',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
+    flex: 1,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#1F1D3A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  suggestionIcon: {
+    marginRight: 10,
+  },
+  suggestionText: {
+    color: '#fff',
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
     flex: 1,
   },
 });
