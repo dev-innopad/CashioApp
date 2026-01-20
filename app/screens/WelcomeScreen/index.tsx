@@ -52,7 +52,9 @@ export default function WelcomeScreen({navigation}: any) {
 
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
-              onPress={() => navigation.replace(NavigationKeys.PinScreen)}>
+              onPress={() =>
+                navigation.replace(NavigationKeys.CheckUserScreen)
+              }>
               <Text style={styles.secondaryButtonText}>I Have an Account</Text>
             </TouchableOpacity>
           </View>

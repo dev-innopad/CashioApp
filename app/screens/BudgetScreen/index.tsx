@@ -1,5 +1,5 @@
 // screens/FinancialReportScreen.tsx
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -82,6 +82,8 @@ export default function FinancialReportScreen({navigation}: any) {
     (state: RootState) => state.userData.monthlyBudget || 0,
   );
 
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
   const goals = useSelector((state: RootState) => state.goals.goals);
   const financialSettings = useSelector(
     (state: RootState) => state.goals.financialSettings,
@@ -153,6 +155,12 @@ export default function FinancialReportScreen({navigation}: any) {
   };
 
   const totals = calculateTotals();
+
+  useEffect(() => {
+    if (monthlyIncome === 0 || autoSavePercentage === 0) {
+      setShowWelcomeModal(true);
+    }
+  }, []);
 
   // Calculate goal percentage
   const calculatePercentage = (saved: number, target: number) => {
@@ -394,14 +402,14 @@ export default function FinancialReportScreen({navigation}: any) {
               <Text style={styles.profitAmount}>
                 {formatCurrency(totals.netWorth)}
               </Text>
-              <Text
+              {/* <Text
                 style={[
                   styles.profitChange,
                   {color: netWorthChange >= 0 ? '#86EFAC' : '#FF6B6B'},
                 ]}>
                 {netWorthChange >= 0 ? '+' : ''}
                 {netWorthChange}% from last month
-              </Text>
+              </Text> */}
             </View>
 
             {/* Monthly Overview */}
@@ -414,11 +422,14 @@ export default function FinancialReportScreen({navigation}: any) {
                   <DollarSign size={24} color="#F4C66A" />
                   <Text style={styles.overviewLabel}>Income</Text>
                   <Text style={styles.overviewValue}>
-                    {formatCurrency(totals.monthlyIncome)}
+                    {monthlyIncome === 0
+                      ? 'Not Set'
+                      : formatCurrency(totals.monthlyIncome)}
                   </Text>
-                  <Text style={styles.overviewEditHint}>Tap to edit</Text>
+                  <Text style={styles.overviewEditHint}>
+                    {monthlyIncome === 0 ? 'Set Income' : 'Tap to edit'}
+                  </Text>
                 </TouchableOpacity>
-
                 <View style={styles.overviewItem}>
                   <TrendingUp size={24} color="#FF6B6B" />
                   <Text style={styles.overviewLabel}>Expenses</Text>
@@ -433,9 +444,13 @@ export default function FinancialReportScreen({navigation}: any) {
                   <PiggyBank size={24} color="#4ECDC4" />
                   <Text style={styles.overviewLabel}>Auto-Save</Text>
                   <Text style={styles.overviewValue}>
-                    {autoSavePercentage}%
+                    {autoSavePercentage === 0
+                      ? 'Not Set'
+                      : `${autoSavePercentage}%`}
                   </Text>
-                  <Text style={styles.overviewEditHint}>Tap to edit</Text>
+                  <Text style={styles.overviewEditHint}>
+                    {autoSavePercentage === 0 ? 'Set Auto-Save' : 'Tap to edit'}
+                  </Text>
                 </TouchableOpacity>
 
                 <View style={styles.overviewItem}>
@@ -468,11 +483,19 @@ export default function FinancialReportScreen({navigation}: any) {
 
               {goals.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Target size={48} color="rgba(255, 255, 255, 0.3)" />
-                  <Text style={styles.emptyStateTitle}>No Goals Yet</Text>
+                  <Target size={72} color="rgba(255, 255, 255, 0.2)" />
+                  <Text style={styles.emptyStateTitle}>No Savings Goals</Text>
                   <Text style={styles.emptyStateText}>
-                    Start by adding your first savings goal
+                    You haven't created any savings goals yet. Add your first
+                    goal to start tracking your savings progress!
                   </Text>
+                  <TouchableOpacity
+                    style={styles.emptyStateButton}
+                    onPress={() => setShowGoalModal(true)}>
+                    <Text style={styles.emptyStateButtonText}>
+                      Create Your First Goal
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 goals.map(goal => {
@@ -1035,6 +1058,89 @@ export default function FinancialReportScreen({navigation}: any) {
               </View>
             </View>
           </Modal>
+
+          <Modal visible={showWelcomeModal} transparent animationType="fade">
+            <View style={styles.welcomeModalOverlay}>
+              <View style={styles.welcomeModal}>
+                {/* Icon */}
+                <View style={styles.welcomeIconContainer}>
+                  <Target size={40} color="#F4C66A" />
+                </View>
+
+                {/* Title */}
+                <Text style={styles.welcomeTitle}>
+                  Welcome to Financial Goals!
+                </Text>
+                <Text style={styles.welcomeSubtitle}>
+                  Let's set up your financial tracking
+                </Text>
+
+                {/* Features list */}
+                <View style={styles.welcomeFeatures}>
+                  <View style={styles.welcomeFeature}>
+                    <View style={styles.welcomeFeatureIcon}>
+                      <DollarSign size={18} color="#4CD964" />
+                    </View>
+                    <Text style={styles.welcomeFeatureText}>
+                      Track your monthly income
+                    </Text>
+                  </View>
+                  <View style={styles.welcomeFeature}>
+                    <View
+                      style={[
+                        styles.welcomeFeatureIcon,
+                        {backgroundColor: 'rgba(244, 198, 106, 0.1)'},
+                      ]}>
+                      <PiggyBank size={18} color="#F4C66A" />
+                    </View>
+                    <Text style={styles.welcomeFeatureText}>
+                      Set auto-save percentage
+                    </Text>
+                  </View>
+                  <View style={styles.welcomeFeature}>
+                    <View
+                      style={[
+                        styles.welcomeFeatureIcon,
+                        {backgroundColor: 'rgba(247, 115, 22, 0.1)'},
+                      ]}>
+                      <Target size={18} color="#F97316" />
+                    </View>
+                    <Text style={styles.welcomeFeatureText}>
+                      Create savings goals
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Description */}
+                <Text style={styles.welcomeText}>
+                  Set up your monthly income and auto-save percentage to start
+                  tracking your savings goals effectively.
+                </Text>
+
+                {/* Buttons */}
+                <View style={styles.welcomeButtons}>
+                  <TouchableOpacity
+                    style={styles.welcomeButton}
+                    onPress={() => {
+                      setShowWelcomeModal(false);
+                      setShowIncomeModal(true);
+                    }}>
+                    <Text style={styles.welcomeButtonText}>Get Started →</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.welcomeButton,
+                      styles.welcomeButtonSecondary,
+                    ]}
+                    onPress={() => setShowWelcomeModal(false)}>
+                    <Text style={styles.welcomeButtonSecondaryText}>
+                      Skip for now
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
         <AppModal
           visible={showDeleteModal}
@@ -1339,6 +1445,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
   },
+  emptyStateButton: {
+    backgroundColor: '#F4C66A',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  emptyStateButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -1448,6 +1566,126 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // welcome Modal
+  // Add these styles to your existing stylesheet in BudgetScreen.tsx
+
+  // If you want a more visually appealing modal with icons:
+
+  welcomeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  welcomeModal: {
+    backgroundColor: '#1F1D3A',
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 198, 106, 0.3)',
+    shadowColor: '#F4C66A',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  welcomeIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(244, 198, 106, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(244, 198, 106, 0.3)',
+  },
+  welcomeTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    color: '#F4C66A',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  welcomeText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    paddingHorizontal: 10,
+  },
+  welcomeFeatures: {
+    width: '100%',
+    marginBottom: 24,
+    gap: 12,
+  },
+  welcomeFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  welcomeFeatureIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(76, 217, 100, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeFeatureText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    flex: 1,
+  },
+  welcomeButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  welcomeButton: {
+    backgroundColor: '#F4C66A',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F4C66A',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  welcomeButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  welcomeButtonSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: 'transparent',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  welcomeButtonSecondaryText: {
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 16,
     fontWeight: '600',
   },

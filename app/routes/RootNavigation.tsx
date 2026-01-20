@@ -18,6 +18,7 @@ import AddExpenseScreen from '../screens/AddExpenseScreen';
 import AddCategoryScreen from '../screens/AddCategoryScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import CheckUserScreen from '../screens/CheckUserScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -83,7 +84,11 @@ const RootNavigation: React.FC = (props: any) => {
           name={NavigationKeys.RegisterScreen}
           component={RegisterScreen}
         />
-
+        <Stack.Screen
+          options={stackScreenOptions}
+          name={NavigationKeys.CheckUserScreen}
+          component={CheckUserScreen}
+        />
         <Stack.Screen
           // options={stackScreenOptions}
           name={NavigationKeys.AddCategoryScreen}

@@ -40,6 +40,7 @@ interface UserDataState {
   expenses: Expense[];
   isAuthenticated: boolean;
   isLoading: boolean;
+  userExists: boolean;
 }
 
 const initialState: UserDataState = {
@@ -48,6 +49,7 @@ const initialState: UserDataState = {
   expenses: [],
   isAuthenticated: false,
   isLoading: false,
+  userExists: false,
 };
 
 // Default categories for new users
@@ -99,6 +101,26 @@ const userDataSlice = createSlice({
   initialState,
   reducers: {
     // User management
+
+    checkUserExists: (
+      state,
+      action: PayloadAction<{email?: string; phone?: string}>,
+    ) => {
+      const {email, phone} = action.payload;
+
+      if (email) {
+        state.userExists = state.users.some(user => user.email === email);
+      } else if (phone) {
+        state.userExists = state.users.some(user => user.phone === phone);
+      } else {
+        state.userExists = state.users.length > 0;
+      }
+    },
+
+    resetUserExists: state => {
+      state.userExists = false;
+    },
+
     registerUser: (
       state,
       action: PayloadAction<{
@@ -129,6 +151,7 @@ const userDataSlice = createSlice({
       state.users.push(newUser);
       state.currentUser = newUser;
       state.isAuthenticated = true;
+      state.userExists = true;
     },
 
     loginUser: (
@@ -280,6 +303,8 @@ const userDataSlice = createSlice({
 });
 
 export const {
+  checkUserExists,
+  resetUserExists,
   registerUser,
   loginUser,
   logoutUser,

@@ -21,4 +21,5 @@ export const NavigationKeys = {
   AddCategoryScreen: 'AddCategoryScreen',
   WelcomeScreen: 'WelcomeScreen',
   RegisterScreen: 'RegisterScreen',
+  CheckUserScreen: 'CheckUserScreen',
 };
