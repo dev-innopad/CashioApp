@@ -37,6 +37,7 @@ import {addExpense} from '../../store/reducers/userData.slice';
 import {_showToast} from '../../services/UIs/ToastConfig';
 import {AppFonts, FontSize} from '../../assets/fonts';
 import {fetchAddressSuggestions} from '../../services/addressService';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 interface Category {
   id: string;
@@ -272,139 +273,140 @@ export default function AddExpenseScreen({navigation, route}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.headerButton}>
-              <ChevronLeft size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Expense</Text>
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSaveExpense}>
-              <Send size={24} color="#F4C66A" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            style={styles.container}
-            showsVerticalScrollIndicator={false}>
-            {/* Header */}
-
-            {/* Amount Input */}
-            <View style={styles.amountSection}>
-              <Text style={styles.sectionLabel}>Amount</Text>
-              <View style={styles.amountInputContainer}>
-                <DollarSign size={32} color="#F4C66A" />
-                <TextInput
-                  style={styles.amountInput}
-                  value={expense.amount?.toString() || ''}
-                  onChangeText={text => {
-                    const cleanText = text.replace(/[^0-9.]/g, '');
-                    const amount = parseFloat(cleanText) || 0;
-                    setExpense({...expense, amount});
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  keyboardType="decimal-pad"
-                  maxLength={10}
-                />
-              </View>
+          <KeyboardAwareScrollView>
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.headerButton}>
+                <ChevronLeft size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Add Expense</Text>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveExpense}>
+                <Send size={24} color="#F4C66A" />
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
+            <ScrollView
+              style={styles.container}
+              showsVerticalScrollIndicator={false}>
+              {/* Header */}
 
-            {/* Quick Amount Buttons */}
-            <View style={styles.quickAmountsContainer}>
-              <Text style={styles.sectionLabel}>Quick Amount</Text>
-              <View style={styles.quickAmounts}>
-                {[100, 500, 1000, 2000, 5000].map(amount => (
-                  <TouchableOpacity
-                    key={amount}
-                    style={styles.quickAmountButton}
-                    onPress={() => setExpense({...expense, amount})}>
-                    <Text style={styles.quickAmountText}>${amount}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Main Form */}
-            <View style={styles.formContainer}>
-              {/* Description */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={expense.description}
-                  onChangeText={text =>
-                    setExpense({...expense, description: text})
-                  }
-                  placeholder="What did you spend on?"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  multiline
-                />
+              {/* Amount Input */}
+              <View style={styles.amountSection}>
+                <Text style={styles.sectionLabel}>Amount</Text>
+                <View style={styles.amountInputContainer}>
+                  <DollarSign size={32} color="#F4C66A" />
+                  <TextInput
+                    style={styles.amountInput}
+                    value={expense.amount?.toString() || ''}
+                    onChangeText={text => {
+                      const cleanText = text.replace(/[^0-9.]/g, '');
+                      const amount = parseFloat(cleanText) || 0;
+                      setExpense({...expense, amount});
+                    }}
+                    placeholder="0.00"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    keyboardType="decimal-pad"
+                    maxLength={10}
+                  />
+                </View>
               </View>
 
-              {/* Category Selection */}
-              <View style={styles.inputGroup}>
-                <View style={styles.categoryHeader}>
-                  <Text style={styles.inputLabel}>Category</Text>
+              {/* Quick Amount Buttons */}
+              <View style={styles.quickAmountsContainer}>
+                <Text style={styles.sectionLabel}>Quick Amount</Text>
+                <View style={styles.quickAmounts}>
+                  {[100, 500, 1000, 2000, 5000].map(amount => (
+                    <TouchableOpacity
+                      key={amount}
+                      style={styles.quickAmountButton}
+                      onPress={() => setExpense({...expense, amount})}>
+                      <Text style={styles.quickAmountText}>${amount}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Main Form */}
+              <View style={styles.formContainer}>
+                {/* Description */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={expense.description}
+                    onChangeText={text =>
+                      setExpense({...expense, description: text})
+                    }
+                    placeholder="What did you spend on?"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    multiline
+                  />
+                </View>
+
+                {/* Category Selection */}
+                <View style={styles.inputGroup}>
+                  <View style={styles.categoryHeader}>
+                    <Text style={styles.inputLabel}>Category</Text>
+                    <TouchableOpacity
+                      style={styles.addCategoryButton}
+                      onPress={navigateToAddCategory}>
+                      <Plus size={16} color="#F4C66A" />
+                      <Text style={styles.addCategoryButtonText}>Add New</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
-                    style={styles.addCategoryButton}
-                    onPress={navigateToAddCategory}>
-                    <Plus size={16} color="#F4C66A" />
-                    <Text style={styles.addCategoryButtonText}>Add New</Text>
+                    style={styles.categorySelector}
+                    onPress={() => setShowCategoryPicker(true)}>
+                    {expense.category ? (
+                      <View style={styles.selectedCategory}>
+                        <View
+                          style={[
+                            styles.categoryIcon,
+                            {backgroundColor: expense.category.color},
+                          ]}>
+                          <Text style={styles.categoryIconText}>
+                            {expense.category.icon}
+                          </Text>
+                        </View>
+                        <Text style={styles.categoryName}>
+                          {expense.category.name}
+                        </Text>
+                        <ChevronLeft
+                          size={20}
+                          color="#666"
+                          style={{transform: [{rotate: '-90deg'}]}}
+                        />
+                      </View>
+                    ) : (
+                      <Text style={styles.placeholderText}>
+                        Select a category
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  style={styles.categorySelector}
-                  onPress={() => setShowCategoryPicker(true)}>
-                  {expense.category ? (
-                    <View style={styles.selectedCategory}>
-                      <View
-                        style={[
-                          styles.categoryIcon,
-                          {backgroundColor: expense.category.color},
-                        ]}>
-                        <Text style={styles.categoryIconText}>
-                          {expense.category.icon}
-                        </Text>
-                      </View>
-                      <Text style={styles.categoryName}>
-                        {expense.category.name}
-                      </Text>
-                      <ChevronLeft
-                        size={20}
-                        color="#666"
-                        style={{transform: [{rotate: '-90deg'}]}}
-                      />
-                    </View>
-                  ) : (
-                    <Text style={styles.placeholderText}>
-                      Select a category
+
+                {/* Date Selection */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Date</Text>
+                  <TouchableOpacity
+                    style={styles.dateSelector}
+                    onPress={() => setShowDatePicker(true)}>
+                    <Calendar size={20} color="#F4C66A" />
+                    <Text style={styles.dateText}>
+                      {formatDate(expense.date!)}
                     </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+                  </TouchableOpacity>
+                </View>
 
-              {/* Date Selection */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Date</Text>
-                <TouchableOpacity
-                  style={styles.dateSelector}
-                  onPress={() => setShowDatePicker(true)}>
-                  <Calendar size={20} color="#F4C66A" />
-                  <Text style={styles.dateText}>
-                    {formatDate(expense.date!)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Location */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Location (Optional)</Text>
-                <View style={styles.locationInput}>
-                  <MapPin size={20} color="#F4C66A" />
-                  {/* <TextInput
+                {/* Location */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Location (Optional)</Text>
+                  <View style={styles.locationInput}>
+                    <MapPin size={20} color="#F4C66A" />
+                    {/* <TextInput
                     style={[styles.textInput, {flex: 1}]}
                     value={expense.location}
                     onChangeText={text =>
@@ -413,178 +415,179 @@ export default function AddExpenseScreen({navigation, route}: any) {
                     placeholder="Where did you spend?"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   /> */}
-                  <TextInput
-                    style={[styles.textInput, {flex: 1}]}
-                    value={expense.location}
-                    onChangeText={text => {
-                      setExpense({...expense, location: text});
-                      handleAddressSearch(text);
-                    }}
-                    onFocus={() => {
-                      if (addressSuggestions.length > 0)
-                        setShowSuggestions(true);
-                    }}
-                    placeholder="Start typing an address..."
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  />
-                  {showSuggestions && addressSuggestions.length > 0 && (
-                    <View style={styles.suggestionsContainer}>
-                      {addressSuggestions.map((item, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.suggestionItem}
-                          onPress={() => {
-                            setExpense({
-                              ...expense,
-                              location: item.fullAddress,
-                            });
-                            setShowSuggestions(false);
-                          }}>
-                          <Text style={styles.suggestionText}>
-                            {item.fullAddress}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                    <TextInput
+                      style={[styles.textInput, {flex: 1}]}
+                      value={expense.location}
+                      onChangeText={text => {
+                        setExpense({...expense, location: text});
+                        handleAddressSearch(text);
+                      }}
+                      onFocus={() => {
+                        if (addressSuggestions.length > 0)
+                          setShowSuggestions(true);
+                      }}
+                      placeholder="Start typing an address..."
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    />
+                    {showSuggestions && addressSuggestions.length > 0 && (
+                      <View style={styles.suggestionsContainer}>
+                        {addressSuggestions.map((item, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => {
+                              setExpense({
+                                ...expense,
+                                location: item.fullAddress,
+                              });
+                              setShowSuggestions(false);
+                            }}>
+                            <Text style={styles.suggestionText}>
+                              {item.fullAddress}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Receipt Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Receipt (Optional)</Text>
+
+                  {receipt ? (
+                    <View style={styles.receiptPreview}>
+                      <Image
+                        source={{uri: receipt.uri}}
+                        style={styles.receiptImage}
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity
+                        style={styles.removeReceiptButton}
+                        onPress={removeReceipt}>
+                        <Trash2 size={20} color="#FF6B6B" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={styles.receiptOptions}>
+                      <TouchableOpacity
+                        style={styles.receiptOption}
+                        onPress={pickImage}>
+                        <ImageIcon size={24} color="#F4C66A" />
+                        <Text style={styles.receiptOptionText}>
+                          Choose from Gallery
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.receiptOption}
+                        onPress={takePhoto}>
+                        <Camera size={24} color="#F4C66A" />
+                        <Text style={styles.receiptOptionText}>Take Photo</Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
-              </View>
 
-              {/* Receipt Section */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Receipt (Optional)</Text>
-
-                {receipt ? (
-                  <View style={styles.receiptPreview}>
-                    <Image
-                      source={{uri: receipt.uri}}
-                      style={styles.receiptImage}
-                      resizeMode="cover"
-                    />
-                    <TouchableOpacity
-                      style={styles.removeReceiptButton}
-                      onPress={removeReceipt}>
-                      <Trash2 size={20} color="#FF6B6B" />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.receiptOptions}>
-                    <TouchableOpacity
-                      style={styles.receiptOption}
-                      onPress={pickImage}>
-                      <ImageIcon size={24} color="#F4C66A" />
-                      <Text style={styles.receiptOptionText}>
-                        Choose from Gallery
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.receiptOption}
-                      onPress={takePhoto}>
-                      <Camera size={24} color="#F4C66A" />
-                      <Text style={styles.receiptOptionText}>Take Photo</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-
-              {/* Notes */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notes (Optional)</Text>
-                <TextInput
-                  style={[styles.textInput, styles.notesInput]}
-                  value={expense.notes}
-                  onChangeText={text => setExpense({...expense, notes: text})}
-                  placeholder="Any additional notes..."
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Category Picker Modal */}
-          {showCategoryPicker && (
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Category</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowCategoryPicker(false)}>
-                    <X size={24} color="#fff" />
-                  </TouchableOpacity>
+                {/* Notes */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Notes (Optional)</Text>
+                  <TextInput
+                    style={[styles.textInput, styles.notesInput]}
+                    value={expense.notes}
+                    onChangeText={text => setExpense({...expense, notes: text})}
+                    placeholder="Any additional notes..."
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    multiline
+                    numberOfLines={4}
+                  />
                 </View>
-
-                <ScrollView style={styles.categoriesList}>
-                  {categories.map(category => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryOption,
-                        expense.category?.id === category.id &&
-                          styles.categoryOptionSelected,
-                      ]}
-                      onPress={() => {
-                        setExpense({...expense, category});
-                        setShowCategoryPicker(false);
-                      }}>
-                      <View
-                        style={[
-                          styles.categoryOptionIcon,
-                          {backgroundColor: category.color},
-                        ]}>
-                        <Text style={styles.categoryOptionIconText}>
-                          {category.icon}
-                        </Text>
-                      </View>
-                      <Text style={styles.categoryOptionName}>
-                        {category.name}
-                      </Text>
-                      {expense.category?.id === category.id && (
-                        <View style={styles.selectedIndicator}>
-                          <ChevronLeft
-                            size={20}
-                            color="#F97316"
-                            style={{transform: [{rotate: '-90deg'}]}}
-                          />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))}
-
-                  {/* Add New Category Option */}
-                  <TouchableOpacity
-                    style={styles.addNewCategoryOption}
-                    onPress={() => {
-                      setShowCategoryPicker(false);
-                      navigateToAddCategory();
-                    }}>
-                    <View style={styles.addNewIcon}>
-                      <Plus size={20} color="#F4C66A" />
-                    </View>
-                    <Text style={styles.addNewText}>Add New Category</Text>
-                    <ChevronLeft
-                      size={20}
-                      color="#666"
-                      style={{transform: [{rotate: '-90deg'}]}}
-                    />
-                  </TouchableOpacity>
-                </ScrollView>
               </View>
-            </View>
-          )}
+            </ScrollView>
 
-          {/* Date Picker */}
-          {showDatePicker && (
-            <DateTimePicker
-              value={expense.date!}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={onDateChange}
-              maximumDate={new Date()}
-            />
-          )}
+            {/* Category Picker Modal */}
+            {showCategoryPicker && (
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Select Category</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowCategoryPicker(false)}>
+                      <X size={24} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView style={styles.categoriesList}>
+                    {categories.map(category => (
+                      <TouchableOpacity
+                        key={category.id}
+                        style={[
+                          styles.categoryOption,
+                          expense.category?.id === category.id &&
+                            styles.categoryOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setExpense({...expense, category});
+                          setShowCategoryPicker(false);
+                        }}>
+                        <View
+                          style={[
+                            styles.categoryOptionIcon,
+                            {backgroundColor: category.color},
+                          ]}>
+                          <Text style={styles.categoryOptionIconText}>
+                            {category.icon}
+                          </Text>
+                        </View>
+                        <Text style={styles.categoryOptionName}>
+                          {category.name}
+                        </Text>
+                        {expense.category?.id === category.id && (
+                          <View style={styles.selectedIndicator}>
+                            <ChevronLeft
+                              size={20}
+                              color="#F97316"
+                              style={{transform: [{rotate: '-90deg'}]}}
+                            />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+
+                    {/* Add New Category Option */}
+                    <TouchableOpacity
+                      style={styles.addNewCategoryOption}
+                      onPress={() => {
+                        setShowCategoryPicker(false);
+                        navigateToAddCategory();
+                      }}>
+                      <View style={styles.addNewIcon}>
+                        <Plus size={20} color="#F4C66A" />
+                      </View>
+                      <Text style={styles.addNewText}>Add New Category</Text>
+                      <ChevronLeft
+                        size={20}
+                        color="#666"
+                        style={{transform: [{rotate: '-90deg'}]}}
+                      />
+                    </TouchableOpacity>
+                  </ScrollView>
+                </View>
+              </View>
+            )}
+
+            {/* Date Picker */}
+            {showDatePicker && (
+              <DateTimePicker
+                value={expense.date!}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+                maximumDate={new Date()}
+              />
+            )}
+          </KeyboardAwareScrollView>
         </SafeAreaView>
       </LinearGradient>
     </AppMainContainer>

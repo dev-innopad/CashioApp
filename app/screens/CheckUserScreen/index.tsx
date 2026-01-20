@@ -19,6 +19,7 @@ import {AppFonts, FontSize} from '../../assets/fonts';
 import {windowHeight} from '../../constants/metrics';
 import * as Yup from 'yup';
 import {Formik} from 'formik';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 const getValidationSchema = (method: 'email' | 'phone') =>
   Yup.object().shape({
@@ -177,68 +178,69 @@ export default function CheckUserScreen({navigation}: any) {
 
   return (
     <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.topHeader}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Shield size={32} color="#F4C66A" />
+      <SafeAreaView style={{flex: 1}}>
+        <KeyboardAvoidingView
+          style={{flex: 1}}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.topHeader}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <Shield size={32} color="#F4C66A" />
+              </View>
+              <Text style={styles.title}>Welcome Back!</Text>
+              <Text style={styles.subtitle}>
+                Enter your email or phone to continue
+              </Text>
             </View>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>
-              Enter your email or phone to continue
-            </Text>
-          </View>
 
-          {/* Method Selector */}
-          <View style={styles.methodSelector}>
-            <TouchableOpacity
-              style={[
-                styles.methodButton,
-                selectedMethod === 'email' && styles.methodButtonActive,
-              ]}
-              onPress={() => setSelectedMethod('email')}>
-              <Mail
-                size={20}
-                color={selectedMethod === 'email' ? '#F4C66A' : '#999'}
-              />
-              <Text
+            {/* Method Selector */}
+            <View style={styles.methodSelector}>
+              <TouchableOpacity
                 style={[
-                  styles.methodText,
-                  selectedMethod === 'email' && styles.methodTextActive,
-                ]}>
-                Email
-              </Text>
-            </TouchableOpacity>
+                  styles.methodButton,
+                  selectedMethod === 'email' && styles.methodButtonActive,
+                ]}
+                onPress={() => setSelectedMethod('email')}>
+                <Mail
+                  size={20}
+                  color={selectedMethod === 'email' ? '#F4C66A' : '#999'}
+                />
+                <Text
+                  style={[
+                    styles.methodText,
+                    selectedMethod === 'email' && styles.methodTextActive,
+                  ]}>
+                  Email
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.methodButton,
-                selectedMethod === 'phone' && styles.methodButtonActive,
-              ]}
-              onPress={() => setSelectedMethod('phone')}>
-              <Phone
-                size={20}
-                color={selectedMethod === 'phone' ? '#F4C66A' : '#999'}
-              />
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.methodText,
-                  selectedMethod === 'phone' && styles.methodTextActive,
-                ]}>
-                Phone
-              </Text>
-            </TouchableOpacity>
-          </View>
+                  styles.methodButton,
+                  selectedMethod === 'phone' && styles.methodButtonActive,
+                ]}
+                onPress={() => setSelectedMethod('phone')}>
+                <Phone
+                  size={20}
+                  color={selectedMethod === 'phone' ? '#F4C66A' : '#999'}
+                />
+                <Text
+                  style={[
+                    styles.methodText,
+                    selectedMethod === 'phone' && styles.methodTextActive,
+                  ]}>
+                  Phone
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-          {/* Input Fields */}
-          {/* <View style={styles.inputContainer}>
+            {/* Input Fields */}
+            {/* <View style={styles.inputContainer}>
             {selectedMethod === 'email' ? (
               <View style={styles.inputWrapper}>
                 <Mail size={20} color="#666" style={styles.inputIcon} />
@@ -269,104 +271,108 @@ export default function CheckUserScreen({navigation}: any) {
             )}
           </View> */}
 
-          <Formik
-            enableReinitialize
-            initialValues={{email: '', phone: ''}}
-            validationSchema={getValidationSchema(selectedMethod)}
-            onSubmit={values => handleContinue(values)}>
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              handleSubmit,
-            }) => (
-              <>
-                {/* Input Fields */}
-                <View style={styles.inputContainer}>
-                  {selectedMethod === 'email' ? (
-                    <>
-                      <View
-                        style={[
-                          styles.inputWrapper,
-                          touched.email &&
-                            errors.email && {
-                              borderColor: 'red',
-                              borderWidth: 1,
-                            },
-                        ]}>
-                        <Mail size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Enter your email"
-                          placeholderTextColor="#666"
-                          value={values.email}
-                          onChangeText={handleChange('email')}
-                          onBlur={handleBlur('email')}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                        />
-                      </View>
+            <Formik
+              enableReinitialize
+              initialValues={{email: '', phone: ''}}
+              validationSchema={getValidationSchema(selectedMethod)}
+              onSubmit={values => handleContinue(values)}>
+              {({
+                values,
+                errors,
+                touched,
+                handleChange,
+                handleBlur,
+                handleSubmit,
+              }) => (
+                <>
+                  {/* Input Fields */}
+                  <View style={styles.inputContainer}>
+                    {selectedMethod === 'email' ? (
+                      <>
+                        <View
+                          style={[
+                            styles.inputWrapper,
+                            touched.email &&
+                              errors.email && {
+                                borderColor: 'red',
+                                borderWidth: 1,
+                              },
+                          ]}>
+                          <Mail
+                            size={20}
+                            color="#666"
+                            style={styles.inputIcon}
+                          />
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Enter your email"
+                            placeholderTextColor="#666"
+                            value={values.email}
+                            onChangeText={handleChange('email')}
+                            onBlur={handleBlur('email')}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                          />
+                        </View>
 
-                      {touched.email && errors.email && (
-                        <Text style={styles.errorText}>{errors.email}</Text>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <View
-                        style={[
-                          styles.inputWrapper,
-                          touched.phone &&
-                            errors.phone && {
-                              borderColor: 'red',
-                              borderWidth: 1,
-                            },
-                        ]}>
-                        <Phone
-                          size={20}
-                          color="#666"
-                          style={styles.inputIcon}
-                        />
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Enter your phone number"
-                          placeholderTextColor="#666"
-                          value={values.phone}
-                          onChangeText={handleChange('phone')}
-                          onBlur={handleBlur('phone')}
-                          keyboardType="phone-pad"
-                          maxLength={10}
-                        />
-                      </View>
+                        {touched.email && errors.email && (
+                          <Text style={styles.errorText}>{errors.email}</Text>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <View
+                          style={[
+                            styles.inputWrapper,
+                            touched.phone &&
+                              errors.phone && {
+                                borderColor: 'red',
+                                borderWidth: 1,
+                              },
+                          ]}>
+                          <Phone
+                            size={20}
+                            color="#666"
+                            style={styles.inputIcon}
+                          />
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Enter your phone number"
+                            placeholderTextColor="#666"
+                            value={values.phone}
+                            onChangeText={handleChange('phone')}
+                            onBlur={handleBlur('phone')}
+                            keyboardType="phone-pad"
+                            maxLength={10}
+                          />
+                        </View>
 
-                      {touched.phone && errors.phone && (
-                        <Text style={styles.errorText}>{errors.phone}</Text>
-                      )}
-                    </>
-                  )}
-                </View>
+                        {touched.phone && errors.phone && (
+                          <Text style={styles.errorText}>{errors.phone}</Text>
+                        )}
+                      </>
+                    )}
+                  </View>
 
-                {/* Continue Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.continueButton,
-                    loading && styles.continueButtonDisabled,
-                  ]}
-                  onPress={handleSubmit}
-                  disabled={loading}>
-                  <Text style={styles.continueButtonText}>
-                    {loading ? 'Checking...' : 'Continue'}
-                  </Text>
-                  <ArrowRight size={20} color="#000" />
-                </TouchableOpacity>
-              </>
-            )}
-          </Formik>
+                  {/* Continue Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.continueButton,
+                      loading && styles.continueButtonDisabled,
+                    ]}
+                    onPress={handleSubmit}
+                    disabled={loading}>
+                    <Text style={styles.continueButtonText}>
+                      {loading ? 'Checking...' : 'Continue'}
+                    </Text>
+                    <ArrowRight size={20} color="#000" />
+                  </TouchableOpacity>
+                </>
+              )}
+            </Formik>
 
-          {/* Continue Button */}
-          {/* <TouchableOpacity
+            {/* Continue Button */}
+            {/* <TouchableOpacity
             style={[
               styles.continueButton,
               loading && styles.continueButtonDisabled,
@@ -378,8 +384,9 @@ export default function CheckUserScreen({navigation}: any) {
             </Text>
             <ArrowRight size={20} color="#000" />
           </TouchableOpacity> */}
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }

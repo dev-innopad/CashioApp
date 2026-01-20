@@ -42,6 +42,7 @@ import {
 import {_showInfoToast, _showToast} from '../../services/UIs/ToastConfig';
 import AppModal from '../../components/AppModal';
 import {NavigationKeys} from '../../constants/navigationKeys';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 export default function ProfileScreen({navigation}: any) {
   const dispatch = useDispatch();
@@ -231,6 +232,7 @@ export default function ProfileScreen({navigation}: any) {
     icon: React.ReactNode,
     key: keyof typeof userData,
     keyboardType: any = 'default',
+    maxLength?: number,
   ) => (
     <View style={styles.inputContainer}>
       <View style={styles.inputLabelRow}>
@@ -247,6 +249,7 @@ export default function ProfileScreen({navigation}: any) {
           keyboardType={keyboardType}
           // editable={key !== 'monthlyBudget'} // Don't edit budget from here
           editable={true}
+          maxLength={maxLength}
         />
       ) : (
         <Text style={styles.inputValue}>
@@ -309,88 +312,90 @@ export default function ProfileScreen({navigation}: any) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
           </View>
-          <ScrollView
-            style={styles.container}
-            showsVerticalScrollIndicator={false}>
-            {/* Profile Section */}
-            <View style={styles.profileSection}>
-              <View style={styles.avatarContainer}>
-                {userData.profileImage ? (
-                  <Image
-                    source={{uri: userData.profileImage}}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <View style={styles.avatar}>
-                    <User size={60} color="#fff" />
-                  </View>
+          <KeyboardAwareScrollView>
+            <ScrollView
+              style={styles.container}
+              showsVerticalScrollIndicator={false}>
+              {/* Profile Section */}
+              <View style={styles.profileSection}>
+                <View style={styles.avatarContainer}>
+                  {userData.profileImage ? (
+                    <Image
+                      source={{uri: userData.profileImage}}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <View style={styles.avatar}>
+                      <User size={60} color="#fff" />
+                    </View>
+                  )}
+                  {isEditing && (
+                    <TouchableOpacity
+                      onPress={handleSelectImage}
+                      style={styles.editAvatarButton}>
+                      <Edit2 size={16} color="#fff" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.userName}>{userData.name}</Text>
+                <Text style={styles.userEmail}>
+                  {userData.email || 'No email set'}
+                </Text>
+              </View>
+
+              {/* Edit Profile Section */}
+              <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Personal Information</Text>
+                  {!isEditing ? (
+                    <TouchableOpacity
+                      onPress={() => setIsEditing(true)}
+                      style={styles.editButton}>
+                      <Edit2 size={20} color="#F4C66A" />
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => setIsEditing(false)}
+                      style={styles.saveButton}>
+                      {/* <X size={20} color="#4ECDC4" /> */}
+                      <Text style={styles.saveButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {renderInputField(
+                  'Name',
+                  userData.name,
+                  <User size={20} color="#F4C66A" />,
+                  'name',
                 )}
+                {renderInputField(
+                  'Email',
+                  userData.email,
+                  <Mail size={20} color="#F4C66A" />,
+                  'email',
+                  'email-address',
+                )}
+                {renderInputField(
+                  'Phone',
+                  userData.phone,
+                  <Phone size={20} color="#F4C66A" />,
+                  'phone',
+                  'phone-pad',
+                  10,
+                )}
+                {renderInputField(
+                  'Monthly Budget',
+                  userData.monthlyBudget,
+                  <DollarSign size={20} color="#F4C66A" />,
+                  'monthlyBudget',
+                  'numeric',
+                )}
+
                 {isEditing && (
-                  <TouchableOpacity
-                    onPress={handleSelectImage}
-                    style={styles.editAvatarButton}>
-                    <Edit2 size={16} color="#fff" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <Text style={styles.userName}>{userData.name}</Text>
-              <Text style={styles.userEmail}>
-                {userData.email || 'No email set'}
-              </Text>
-            </View>
-
-            {/* Edit Profile Section */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
-                {!isEditing ? (
-                  <TouchableOpacity
-                    onPress={() => setIsEditing(true)}
-                    style={styles.editButton}>
-                    <Edit2 size={20} color="#F4C66A" />
-                    <Text style={styles.editButtonText}>Edit</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => setIsEditing(false)}
-                    style={styles.saveButton}>
-                    {/* <X size={20} color="#4ECDC4" /> */}
-                    <Text style={styles.saveButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {renderInputField(
-                'Name',
-                userData.name,
-                <User size={20} color="#F4C66A" />,
-                'name',
-              )}
-              {renderInputField(
-                'Email',
-                userData.email,
-                <Mail size={20} color="#F4C66A" />,
-                'email',
-                'email-address',
-              )}
-              {renderInputField(
-                'Phone',
-                userData.phone,
-                <Phone size={20} color="#F4C66A" />,
-                'phone',
-                'phone-pad',
-              )}
-              {renderInputField(
-                'Monthly Budget',
-                userData.monthlyBudget,
-                <DollarSign size={20} color="#F4C66A" />,
-                'monthlyBudget',
-                'numeric',
-              )}
-
-              {isEditing && (
-                <View style={styles.buttonRow}>
-                  {/* <Pressable
+                  <View style={styles.buttonRow}>
+                    {/* <Pressable
                     style={styles.cancelButton}
                     onPress={() => {
                       setIsEditing(false);
@@ -408,105 +413,106 @@ export default function ProfileScreen({navigation}: any) {
                     }}>
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </Pressable> */}
-                  <Pressable
-                    style={styles.saveChangesButton}
-                    onPress={handleSave}>
-                    <Text style={styles.saveChangesButtonText}>
-                      Save Changes
-                    </Text>
-                  </Pressable>
-                </View>
-              )}
-            </View>
-
-            {/* Security Section */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Security</Text>
-                <TouchableOpacity
-                  onPress={() => setIsChangingPin(!isChangingPin)}
-                  style={styles.editButton}>
-                  <Shield size={20} color="#F4C66A" />
-                  <Text style={styles.editButtonText}>
-                    {isChangingPin ? 'Cancel' : 'Change PIN'}
-                  </Text>
-                </TouchableOpacity>
+                    <Pressable
+                      style={styles.saveChangesButton}
+                      onPress={handleSave}>
+                      <Text style={styles.saveChangesButtonText}>
+                        Save Changes
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
               </View>
 
-              {isChangingPin ? (
-                <>
-                  {renderPinInput(
-                    'Current PIN',
-                    pinData.oldPin,
-                    showOldPin,
-                    setShowOldPin,
-                    'oldPin',
-                  )}
-                  {renderPinInput(
-                    'New PIN',
-                    pinData.newPin,
-                    showNewPin,
-                    setShowNewPin,
-                    'newPin',
-                  )}
-                  {renderPinInput(
-                    'Confirm New PIN',
-                    pinData.confirmPin,
-                    showConfirmPin,
-                    setShowConfirmPin,
-                    'confirmPin',
-                  )}
-
-                  <Pressable
-                    style={styles.changePinButton}
-                    onPress={handleChangePin}>
-                    <Text style={styles.changePinButtonText}>Update PIN</Text>
-                  </Pressable>
-                </>
-              ) : (
-                <View style={styles.securityInfo}>
-                  <View style={styles.securityItem}>
-                    <Shield size={20} color="#4ECDC4" />
-                    <Text style={styles.securityText}>
-                      Your account is secured with a 4-digit PIN
+              {/* Security Section */}
+              <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Security</Text>
+                  <TouchableOpacity
+                    onPress={() => setIsChangingPin(!isChangingPin)}
+                    style={styles.editButton}>
+                    <Shield size={20} color="#F4C66A" />
+                    <Text style={styles.editButtonText}>
+                      {isChangingPin ? 'Cancel' : 'Change PIN'}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
-              )}
-            </View>
 
-            {/* App Control Section */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Account</Text>
-              <View style={styles.appControlGrid}>
-                <TouchableOpacity
-                  style={styles.appControlItem}
-                  onPress={() => _showToast('Coming Soon', 'info')}>
-                  <View
-                    style={[
-                      styles.controlIcon,
-                      {backgroundColor: 'rgba(168, 85, 247, 0.2)'},
-                    ]}>
-                    <Bell size={24} color="#A855F7" />
-                  </View>
-                  <Text style={styles.controlLabel}>Notifications</Text>
-                </TouchableOpacity>
+                {isChangingPin ? (
+                  <>
+                    {renderPinInput(
+                      'Current PIN',
+                      pinData.oldPin,
+                      showOldPin,
+                      setShowOldPin,
+                      'oldPin',
+                    )}
+                    {renderPinInput(
+                      'New PIN',
+                      pinData.newPin,
+                      showNewPin,
+                      setShowNewPin,
+                      'newPin',
+                    )}
+                    {renderPinInput(
+                      'Confirm New PIN',
+                      pinData.confirmPin,
+                      showConfirmPin,
+                      setShowConfirmPin,
+                      'confirmPin',
+                    )}
 
-                <TouchableOpacity
-                  style={styles.appControlItem}
-                  onPress={handleLogout}>
-                  <View
-                    style={[
-                      styles.controlIcon,
-                      {backgroundColor: 'rgba(255, 107, 107, 0.2)'},
-                    ]}>
-                    <LogOut size={24} color="#FF6B6B" />
+                    <Pressable
+                      style={styles.changePinButton}
+                      onPress={handleChangePin}>
+                      <Text style={styles.changePinButtonText}>Update PIN</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <View style={styles.securityInfo}>
+                    <View style={styles.securityItem}>
+                      <Shield size={20} color="#4ECDC4" />
+                      <Text style={styles.securityText}>
+                        Your account is secured with a 4-digit PIN
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.controlLabel}>Logout</Text>
-                </TouchableOpacity>
+                )}
               </View>
-            </View>
-          </ScrollView>
+
+              {/* App Control Section */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Account</Text>
+                <View style={styles.appControlGrid}>
+                  <TouchableOpacity
+                    style={styles.appControlItem}
+                    onPress={() => _showToast('Coming Soon', 'info')}>
+                    <View
+                      style={[
+                        styles.controlIcon,
+                        {backgroundColor: 'rgba(168, 85, 247, 0.2)'},
+                      ]}>
+                      <Bell size={24} color="#A855F7" />
+                    </View>
+                    <Text style={styles.controlLabel}>Notifications</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.appControlItem}
+                    onPress={handleLogout}>
+                    <View
+                      style={[
+                        styles.controlIcon,
+                        {backgroundColor: 'rgba(255, 107, 107, 0.2)'},
+                      ]}>
+                      <LogOut size={24} color="#FF6B6B" />
+                    </View>
+                    <Text style={styles.controlLabel}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAwareScrollView>
           <AppModal
             visible={showLogoutModal}
             type="error"

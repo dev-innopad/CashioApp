@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Switch,
-  Modal,
+  // Modal,
   TextInput,
   Alert,
 } from 'react-native';
@@ -46,6 +46,7 @@ import {
   updateAutoSavePercentage,
 } from '../../store/reducers/goalsSlice';
 import AppModal from '../../components/AppModal';
+import Modal from 'react-native-modal';
 
 interface GoalFormData {
   name: string;
@@ -617,10 +618,9 @@ export default function FinancialReportScreen({navigation}: any) {
 
           {/* Add Goal Modal */}
           <Modal
-            visible={showGoalModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => {
+            isVisible={showGoalModal}
+            avoidKeyboard={true}
+            onModalHide={() => {
               setShowGoalModal(false);
               resetGoalForm();
             }}>
@@ -646,7 +646,7 @@ export default function FinancialReportScreen({navigation}: any) {
                       onChangeText={text =>
                         setGoalFormData({...goalFormData, name: text})
                       }
-                      placeholder="e.g., New Car, Vacation, Emergency Fund"
+                      placeholder="e.g., New Car"
                       placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     />
                   </View>
@@ -750,10 +750,9 @@ export default function FinancialReportScreen({navigation}: any) {
 
           {/* Edit Goal Modal */}
           <Modal
-            visible={!!showEditGoalModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => {
+            isVisible={!!showEditGoalModal}
+            avoidKeyboard={true}
+            onModalHide={() => {
               setShowEditGoalModal(null);
               resetGoalForm();
             }}>
@@ -880,10 +879,9 @@ export default function FinancialReportScreen({navigation}: any) {
 
           {/* Add Funds Modal */}
           <Modal
-            visible={!!showAddFundsModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => {
+            isVisible={!!showAddFundsModal}
+            avoidKeyboard={true}
+            onModalHide={() => {
               setShowAddFundsModal(null);
               setFundAmount('');
             }}>
@@ -959,10 +957,9 @@ export default function FinancialReportScreen({navigation}: any) {
 
           {/* Income Edit Modal */}
           <Modal
-            visible={showIncomeModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowIncomeModal(false)}>
+            isVisible={showIncomeModal}
+            avoidKeyboard={true}
+            onModalHide={() => setShowIncomeModal(false)}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
@@ -984,6 +981,7 @@ export default function FinancialReportScreen({navigation}: any) {
                         placeholder="0"
                         placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         keyboardType="decimal-pad"
+                        maxLength={6}
                       />
                     </View>
                   </View>
@@ -1007,10 +1005,9 @@ export default function FinancialReportScreen({navigation}: any) {
 
           {/* Auto-Save Edit Modal */}
           <Modal
-            visible={showAutoSaveModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowAutoSaveModal(false)}>
+            isVisible={showAutoSaveModal}
+            avoidKeyboard={true}
+            onModalHide={() => setShowAutoSaveModal(false)}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
@@ -1033,6 +1030,7 @@ export default function FinancialReportScreen({navigation}: any) {
                         placeholder="0"
                         placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         keyboardType="decimal-pad"
+                        maxLength={3}
                       />
                       <Text style={styles.currencySymbol}>%</Text>
                     </View>
@@ -1058,7 +1056,7 @@ export default function FinancialReportScreen({navigation}: any) {
             </View>
           </Modal>
 
-          <Modal visible={showWelcomeModal} transparent animationType="fade">
+          <Modal isVisible={showWelcomeModal} avoidKeyboard={true}>
             <View style={styles.welcomeModalOverlay}>
               <View style={styles.welcomeModal}>
                 {/* Icon */}
@@ -1118,14 +1116,16 @@ export default function FinancialReportScreen({navigation}: any) {
 
                 {/* Buttons */}
                 <View style={styles.welcomeButtons}>
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     style={styles.welcomeButton}
                     onPress={() => {
                       setShowWelcomeModal(false);
-                      setShowIncomeModal(true);
+                      // setTimeout(() => {
+                      //   setShowIncomeModal(true);
+                      // }, 500);
                     }}>
                     <Text style={styles.welcomeButtonText}>Get Started →</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                   <TouchableOpacity
                     style={[
                       styles.welcomeButton,
@@ -1133,7 +1133,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     ]}
                     onPress={() => setShowWelcomeModal(false)}>
                     <Text style={styles.welcomeButtonSecondaryText}>
-                      Skip for now
+                      Understood
                     </Text>
                   </TouchableOpacity>
                 </View>

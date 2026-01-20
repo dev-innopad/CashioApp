@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  FlatList,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
@@ -384,43 +385,49 @@ export default function HomeScreen({navigation}: any) {
                 <Text style={styles.sectionTitle}>Recent Expenses</Text>
               </View>
 
-              {recentExpensesData.length > 0
-                ? recentExpensesData.map(expense => {
-                    const IconComponent = expense.icon;
-                    return (
-                      <View key={expense.id} style={styles.expenseCard}>
-                        <View
-                          style={[
-                            styles.expenseIcon,
-                            {backgroundColor: `${expense.color}20`},
-                          ]}>
-                          <IconComponent size={24} color={expense.color} />
-                        </View>
-                        <View style={styles.expenseInfo}>
-                          <Text
-                            style={styles.expenseTitle}
-                            numberOfLines={1}
-                            ellipsizeMode="tail">
-                            {expense.title}
-                          </Text>
-                          <Text style={styles.expenseDescription}>
-                            {expense.description}
-                          </Text>
-                        </View>
-                        <View style={styles.expenseRight}>
-                          <Text style={styles.expenseDate}>{expense.date}</Text>
-                          <Text style={styles.expenseAmount}>
-                            {expense.amount}
-                          </Text>
-                        </View>
+              <FlatList
+                data={recentExpensesData}
+                keyExtractor={item => item.id.toString()}
+                inverted
+                renderItem={({item}) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <View style={styles.expenseCard}>
+                      <View
+                        style={[
+                          styles.expenseIcon,
+                          {backgroundColor: `${item.color}20`},
+                        ]}>
+                        <IconComponent size={24} color={item.color} />
                       </View>
-                    );
-                  })
-                : renderEmptyState(
+
+                      <View style={styles.expenseInfo}>
+                        <Text
+                          style={styles.expenseTitle}
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
+                          {item.title}
+                        </Text>
+                        <Text style={styles.expenseDescription}>
+                          {item.description}
+                        </Text>
+                      </View>
+
+                      <View style={styles.expenseRight}>
+                        <Text style={styles.expenseDate}>{item.date}</Text>
+                        <Text style={styles.expenseAmount}>{item.amount}</Text>
+                      </View>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={() =>
+                  renderEmptyState(
                     'No Recent Expenses',
                     'Your recent expenses will appear here',
                     true,
-                  )}
+                  )
+                }
+              />
             </View>
 
             {/* All Transactions */}
@@ -435,40 +442,46 @@ export default function HomeScreen({navigation}: any) {
                 </TouchableOpacity>
               </View>
 
-              {allTransactionsData.length > 0
-                ? allTransactionsData.slice(0, 3).map(transaction => {
-                    const IconComponent = transaction.icon;
-                    return (
-                      <View key={transaction.id} style={styles.transactionCard}>
-                        <View
-                          style={[
-                            styles.transactionIcon,
-                            {backgroundColor: transaction.color},
-                          ]}>
-                          <IconComponent size={20} color="#fff" />
-                        </View>
-                        <View style={styles.transactionInfo}>
-                          <Text
-                            style={styles.transactionTitle}
-                            numberOfLines={1}
-                            ellipsizeMode="tail">
-                            {transaction.title}
-                          </Text>
-                          <Text style={styles.transactionDate}>
-                            {transaction.date}
-                          </Text>
-                        </View>
-                        <Text style={styles.transactionAmount}>
-                          {transaction.amount}
-                        </Text>
+              <FlatList
+                data={allTransactionsData}
+                keyExtractor={item => item.id.toString()}
+                inverted
+                renderItem={({item}) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <View style={styles.transactionCard}>
+                      <View
+                        style={[
+                          styles.transactionIcon,
+                          {backgroundColor: item.color},
+                        ]}>
+                        <IconComponent size={20} color="#fff" />
                       </View>
-                    );
-                  })
-                : renderEmptyState(
+
+                      <View style={styles.transactionInfo}>
+                        <Text
+                          style={styles.transactionTitle}
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
+                          {item.title}
+                        </Text>
+                        <Text style={styles.transactionDate}>{item.date}</Text>
+                      </View>
+
+                      <Text style={styles.transactionAmount}>
+                        {item.amount}
+                      </Text>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={() =>
+                  renderEmptyState(
                     'No Transactions',
                     'Your transactions will appear here',
                     true,
-                  )}
+                  )
+                }
+              />
             </View>
 
             {/* Savings Progress */}
