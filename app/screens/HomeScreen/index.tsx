@@ -4,76 +4,86 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  FlatList,
   StatusBar,
   SafeAreaView,
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
-import AppText from '../../components/AppText';
-import {AnimatedCircularProgress} from 'react-native-circular-progress';
+import {useSelector} from 'react-redux';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 // Import Lucide icons
 import {
   Bell,
   Home,
-  BarChart3,
-  Wallet,
-  User,
   ShoppingCart,
   Car,
   ShoppingBag,
-  CreditCard,
   Utensils,
-  Bus,
   Tv,
   CircleDollarSign,
   TrendingUp,
   PiggyBank,
-  GanttChartSquare,
   Fuel,
+  CreditCard,
   DollarSign,
+  Coffee,
+  Film,
+  Heart,
+  Book,
+  Bus,
+  Plane,
+  Music,
+  Gamepad2,
+  Dumbbell,
+  GraduationCap,
+  Gift,
+  Wifi,
+  Phone,
+  Zap,
+  Cloud,
+  Package,
 } from 'lucide-react-native';
-import {useSelector} from 'react-redux';
-import {_showToast} from '../../services/UIs/ToastConfig';
+import {NavigationKeys} from '../../constants/navigationKeys';
 
 export default function HomeScreen({navigation}: any) {
-  // Get expenses from Redux
+  // Get all data from Redux
   const expenses = useSelector((state: any) => state.userData.expenses || []);
-
-  console.log('expenses from redux', expenses);
-
-  // Get user name from Redux (if available)
-  const userName = useSelector(
-    (state: any) => state.userData.userName || 'John Alex',
+  const currentUser = useSelector((state: any) => state.userData.currentUser);
+  const categories = useSelector(
+    (state: any) => state.userData.categories || [],
   );
+  // const userName = useSelector(
+  //   (state: any) => state.userData.userName || 'User',
+  // );
 
-  // Calculate totals from Redux expenses
+  const userName = currentUser?.name || 'User';
+  // const monthlyBudget = useSelector(
+  //   (state: any) => state.userData.monthlyBudget || 30000,
+  // );
+
+  const monthlyBudget = currentUser?.monthlyBudget || 30000;
+
+  console.log('Data from redux:', {
+    expensesCount: expenses.length,
+    categoriesCount: categories.length,
+    monthlyBudget,
+  });
+
+  // Calculate dynamic totals
   const calculateTotals = () => {
-    if (!expenses || expenses.length === 0) {
-      return {
-        totalSpent: 0,
-        totalBudget: 30000, // Default budget if no expenses
-        totalRemaining: 30000,
-        totalSavings: 0,
-        // Add formatted strings
-        formattedRemaining: '$30,000',
-        formattedSpent: '$0',
-        formattedSavings: '$0',
-      };
-    }
-
     const totalSpent = expenses.reduce(
       (sum: number, expense: any) => sum + (expense.amount || 0),
       0,
     );
 
-    const totalBudget = 30000;
+    const totalBudget = monthlyBudget || 0;
     const totalRemaining = Math.max(0, totalBudget - totalSpent);
-    const totalSavings = Math.max(0, totalBudget * 0.3 - totalSpent);
+    const savingsGoal = totalBudget * 0.3; // 30% savings goal
+    const totalSavings = Math.max(0, savingsGoal - totalSpent);
 
-    // Format numbers properly to avoid line breaks
+    // Format numbers
     const formatter = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -93,47 +103,92 @@ export default function HomeScreen({navigation}: any) {
 
   const totals = calculateTotals();
 
-  // Group expenses by category and calculate category totals
-  // In HomeScreen, update the getCategoryTotals function:
+  // Get category totals dynamically
   const getCategoryTotals = () => {
-    if (!expenses || expenses.length === 0) {
-      return budgetCategories; // Return default if no expenses
+    if (
+      !expenses ||
+      expenses.length === 0 ||
+      !categories ||
+      categories.length === 0
+    ) {
+      return [];
     }
 
-    const categoryMap = {
-      Food: {spent: 0, color: '#F97316', icon: Utensils, budget: 5000},
-      Transport: {spent: 0, color: '#22D3EE', icon: Car, budget: 6000},
-      Shopping: {spent: 0, color: '#86EFAC', icon: ShoppingBag, budget: 5000},
-      Home: {spent: 0, color: '#A855F7', icon: Home, budget: 4000},
-      Entertainment: {spent: 0, color: '#FF6B6B', icon: Tv, budget: 2000},
-    };
+    // Create a map of category budgets
+    const categoryBudgetMap: {[key: string]: number} = {};
+    categories.forEach((cat: any) => {
+      categoryBudgetMap[cat.name] = cat.budget || 0;
+    });
+
+    // Initialize category totals
+    const categoryTotals: {
+      [key: string]: {spent: number; budget: number; color: string; icon: any};
+    } = {};
+
+    // Set defaults from categories
+    categories.forEach((cat: any) => {
+      // Map category name to icon
+      let icon = ShoppingCart; // default
+      if (cat.name?.toLowerCase().includes('food')) icon = Utensils;
+      else if (cat.name?.toLowerCase().includes('transport')) icon = Car;
+      else if (cat.name?.toLowerCase().includes('shopping')) icon = ShoppingBag;
+      else if (cat.name?.toLowerCase().includes('home')) icon = Home;
+      else if (cat.name?.toLowerCase().includes('entertainment')) icon = Tv;
+      else if (cat.name?.toLowerCase().includes('health')) icon = Heart;
+      else if (cat.name?.toLowerCase().includes('education'))
+        icon = GraduationCap;
+      else if (cat.name?.toLowerCase().includes('bills')) icon = CreditCard;
+      else if (cat.name?.toLowerCase().includes('travel')) icon = Plane;
+      else if (cat.name?.toLowerCase().includes('fuel')) icon = Fuel;
+      else if (cat.name?.toLowerCase().includes('coffee')) icon = Coffee;
+      else if (cat.name?.toLowerCase().includes('movie')) icon = Film;
+      else if (cat.name?.toLowerCase().includes('music')) icon = Music;
+      else if (cat.name?.toLowerCase().includes('gym')) icon = Dumbbell;
+      else if (cat.name?.toLowerCase().includes('gift')) icon = Gift;
+      else if (cat.name?.toLowerCase().includes('internet')) icon = Wifi;
+      else if (cat.name?.toLowerCase().includes('phone')) icon = Phone;
+      else if (cat.name?.toLowerCase().includes('electricity')) icon = Zap;
+      else if (cat.name?.toLowerCase().includes('subscription')) icon = Cloud;
+      else if (cat.name?.toLowerCase().includes('delivery')) icon = Package;
+
+      categoryTotals[cat.name] = {
+        spent: 0,
+        budget: cat.budget || 0,
+        color: cat.color || '#F97316',
+        icon: icon,
+      };
+    });
 
     // Calculate spent per category
     expenses.forEach((expense: any) => {
       let categoryName = '';
 
-      // Handle both string and object category
       if (typeof expense.category === 'string') {
         categoryName = expense.category;
       } else if (expense.category && expense.category.name) {
         categoryName = expense.category.name;
       }
 
-      if (categoryName && categoryMap[categoryName]) {
-        categoryMap[categoryName].spent += expense.amount || 0;
+      if (categoryName && categoryTotals[categoryName]) {
+        categoryTotals[categoryName].spent += expense.amount || 0;
       }
     });
 
     // Convert to array format
-    return Object.entries(categoryMap).map(([title, data], index) => ({
-      id: (index + 1).toString(),
-      title,
-      percentage: Math.min(Math.round((data.spent / data.budget) * 100), 100),
-      spent: data.spent,
-      total: data.budget,
-      color: data.color,
-      icon: data.icon,
-    }));
+    return Object.entries(categoryTotals)
+      .map(([title, data], index) => ({
+        id: (index + 1).toString(),
+        title,
+        percentage:
+          data.budget > 0
+            ? Math.min(Math.round((data.spent / data.budget) * 100), 100)
+            : 0,
+        spent: data.spent,
+        total: data.budget,
+        color: data.color,
+        icon: data.icon,
+      }))
+      .filter(cat => cat.total > 0); // Only show categories with budget
   };
 
   const budgetCategoriesData = getCategoryTotals();
@@ -141,7 +196,7 @@ export default function HomeScreen({navigation}: any) {
   // Get recent expenses (last 3 expenses)
   const getRecentExpenses = () => {
     if (!expenses || expenses.length === 0) {
-      return recentExpenses; // Return default if no expenses
+      return [];
     }
 
     // Sort by date (newest first) and take first 3
@@ -161,13 +216,28 @@ export default function HomeScreen({navigation}: any) {
         categoryName = expense.category.name;
       }
 
-      // Map category to icon
-      let icon = ShoppingCart; // default
-      if (categoryName === 'Home') icon = Home;
-      else if (categoryName === 'Transport') icon = Car;
-      else if (categoryName === 'Shopping') icon = ShoppingBag;
-      else if (categoryName === 'Food') icon = Utensils;
-      else if (categoryName === 'Entertainment') icon = Tv;
+      // Get category details for icon and color
+      let icon = ShoppingCart;
+      let color = '#F97316';
+
+      const categoryDetails = categories.find(
+        (cat: any) => cat.name === categoryName,
+      );
+      if (categoryDetails) {
+        color = categoryDetails.color || '#F97316';
+        // Simple icon mapping based on category name
+        if (categoryName?.toLowerCase().includes('food')) icon = Utensils;
+        else if (categoryName?.toLowerCase().includes('transport')) icon = Car;
+        else if (categoryName?.toLowerCase().includes('shopping'))
+          icon = ShoppingBag;
+        else if (categoryName?.toLowerCase().includes('home')) icon = Home;
+        else if (categoryName?.toLowerCase().includes('entertainment'))
+          icon = Tv;
+        else if (categoryName?.toLowerCase().includes('fuel')) icon = Fuel;
+        else if (categoryName?.toLowerCase().includes('coffee')) icon = Coffee;
+        else if (categoryName?.toLowerCase().includes('movie')) icon = Film;
+        else if (categoryName?.toLowerCase().includes('music')) icon = Music;
+      }
 
       // Format date
       const date = new Date(expense.date);
@@ -181,8 +251,9 @@ export default function HomeScreen({navigation}: any) {
         title: expense.description || 'Expense',
         description: categoryName || 'Category',
         date: formattedDate,
-        amount: `$${expense.amount?.toLocaleString() || '0'}`,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
         icon,
+        color,
       };
     });
   };
@@ -192,13 +263,13 @@ export default function HomeScreen({navigation}: any) {
   // Get all transactions (for the transactions section)
   const getAllTransactions = () => {
     if (!expenses || expenses.length === 0) {
-      return transactions; // Return default if no expenses
+      return [];
     }
 
-    // Take first 3 expenses for transactions section
-    const firstThreeExpenses = expenses.slice(0, 3);
+    // Take first 5 expenses for transactions section
+    const firstFiveExpenses = expenses.slice(0, 5);
 
-    return firstThreeExpenses.map((expense: any, index: number) => {
+    return firstFiveExpenses.map((expense: any, index: number) => {
       // Get category name
       let categoryName = '';
       if (typeof expense.category === 'string') {
@@ -207,25 +278,23 @@ export default function HomeScreen({navigation}: any) {
         categoryName = expense.category.name;
       }
 
-      // Map category to icon and color
-      let icon = Fuel; // default
-      let color = '#F97316'; // default
+      // Get category details for icon and color
+      let icon = ShoppingCart;
+      let color = '#F97316';
 
-      if (categoryName === 'Home') {
-        icon = Home;
-        color = '#F97316';
-      } else if (categoryName === 'Transport') {
-        icon = Car;
-        color = '#22D3EE';
-      } else if (categoryName === 'Shopping') {
-        icon = ShoppingBag;
-        color = '#A855F7';
-      } else if (categoryName === 'Food') {
-        icon = Utensils;
-        color = '#86EFAC';
-      } else if (categoryName === 'Entertainment') {
-        icon = Tv;
-        color = '#FF6B6B';
+      const categoryDetails = categories.find(
+        (cat: any) => cat.name === categoryName,
+      );
+      if (categoryDetails) {
+        color = categoryDetails.color || '#F97316';
+        if (categoryName?.toLowerCase().includes('food')) icon = Utensils;
+        else if (categoryName?.toLowerCase().includes('transport')) icon = Car;
+        else if (categoryName?.toLowerCase().includes('shopping'))
+          icon = ShoppingBag;
+        else if (categoryName?.toLowerCase().includes('home')) icon = Home;
+        else if (categoryName?.toLowerCase().includes('entertainment'))
+          icon = Tv;
+        else if (categoryName?.toLowerCase().includes('fuel')) icon = Fuel;
       }
 
       // Format date
@@ -238,7 +307,7 @@ export default function HomeScreen({navigation}: any) {
         id: expense.id || index.toString(),
         title: expense.description || 'Transaction',
         date: formattedDate,
-        amount: `$${expense.amount?.toLocaleString() || '0'}`,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
         color,
         icon,
       };
@@ -246,6 +315,39 @@ export default function HomeScreen({navigation}: any) {
   };
 
   const transactionsData = getAllTransactions();
+
+  // Calculate savings percentage
+  const calculateSavingsPercentage = () => {
+    if (totals.totalBudget === 0) return 0;
+    const savingsGoal = totals.totalBudget * 0.3;
+    if (savingsGoal === 0) return 0;
+    const percentage = Math.min(
+      Math.round((totals.totalSavings / savingsGoal) * 100),
+      100,
+    );
+    return percentage;
+  };
+
+  const savingsPercentage = calculateSavingsPercentage();
+
+  // Render empty states
+  const renderEmptyState = (
+    title: string,
+    message: string,
+    showButton: boolean = false,
+  ) => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateTitle}>{title}</Text>
+      <Text style={styles.emptyStateText}>{message}</Text>
+      {showButton && (
+        <Pressable
+          style={styles.addButton}
+          onPress={() => navigation.navigate(NavigationKeys.AddExpenseScreen)}>
+          <Text style={styles.addButtonText}>Add Your First Expense</Text>
+        </Pressable>
+      )}
+    </View>
+  );
 
   return (
     <AppMainContainer hideTop hideBottom>
@@ -268,8 +370,7 @@ export default function HomeScreen({navigation}: any) {
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
-            {/* Header */}
-
+            {/* Monthly Summary */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Monthly Summary</Text>
               <View style={styles.summaryCards}>
@@ -293,137 +394,167 @@ export default function HomeScreen({navigation}: any) {
                     {totals.formattedSpent}
                   </Text>
                 </View>
-                <View style={styles.summaryCard}>
-                  <PiggyBank size={24} color="#4ECDC4" />
-                  <Text style={styles.summaryLabel}>Total Savings</Text>
-                  <Text
-                    style={styles.summaryValue}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit>
-                    {totals.formattedSavings}
-                  </Text>
-                </View>
               </View>
             </View>
 
             {/* Budget Tracking */}
-            <View style={styles.sectionContainer}>
+            {/* <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Budget Tracking</Text>
-                {/* <Pressable onPress={() => navigation.navigate('Report')}>
-                  <Text style={styles.seeAllText}>See all</Text>
-                </Pressable> */}
               </View>
 
-              {budgetCategoriesData.map(category => {
-                const IconComponent = category.icon;
-                return (
-                  <View key={category.id} style={styles.budgetCard}>
-                    <View style={styles.budgetHeader}>
-                      <View style={styles.budgetTitleContainer}>
-                        <IconComponent size={20} color={category.color} />
-                        <Text style={styles.budgetTitle}>{category.title}</Text>
+              {budgetCategoriesData.length > 0 ? (
+                budgetCategoriesData.map(category => {
+                  const IconComponent = category.icon;
+                  return (
+                    <View key={category.id} style={styles.budgetCard}>
+                      <View style={styles.budgetHeader}>
+                        <View style={styles.budgetTitleContainer}>
+                          <IconComponent size={20} color={category.color} />
+                          <Text style={styles.budgetTitle}>{category.title}</Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.budgetPercentage,
+                            {color: category.color},
+                          ]}>
+                          {category.percentage}%
+                        </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.budgetPercentage,
-                          {color: category.color},
-                        ]}>
-                        {category.percentage}%
+                      <View style={styles.progressBarContainer}>
+                        <View style={styles.progressBarBackground}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              {
+                                width: `${category.percentage}%`,
+                                backgroundColor: category.color,
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                      <Text style={styles.budgetAmount}>
+                        Spent ${category.spent.toLocaleString()} | $
+                        {category.total.toLocaleString()}
                       </Text>
                     </View>
-                    <View style={styles.progressBarContainer}>
-                      <View style={styles.progressBarBackground}>
-                        <View
-                          style={[
-                            styles.progressBarFill,
-                            {
-                              width: `${category.percentage}%`,
-                              backgroundColor: category.color,
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                    <Text style={styles.budgetAmount}>
-                      Spent ${category.spent.toLocaleString()} | $
-                      {category.total.toLocaleString()}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+                  );
+                })
+              ) : (
+                null
+              )}
+            </View> */}
 
             {/* Recent Expenses */}
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent Expenses</Text>
-                {/* <Pressable onPress={() => navigation.navigate('Expenses')}>
-                  <Text style={styles.seeAllText}>See all</Text>
-                </Pressable> */}
               </View>
 
-              {recentExpensesData.map(expense => {
-                const IconComponent = expense.icon;
-                const isHome = expense.icon === Home;
-                return (
-                  <View key={expense.id} style={styles.expenseCard}>
-                    <View
-                      style={[
-                        styles.expenseIcon,
-                        {
-                          backgroundColor: isHome ? '#F9731620' : '#4ECDC420',
-                        },
-                      ]}>
-                      <IconComponent
-                        size={24}
-                        color={isHome ? '#F97316' : '#4ECDC4'}
-                      />
-                    </View>
-                    <View style={styles.expenseInfo}>
-                      <Text style={styles.expenseTitle}>{expense.title}</Text>
-                      <Text style={styles.expenseDescription}>
-                        {expense.description}
-                      </Text>
-                    </View>
-                    <View style={styles.expenseRight}>
-                      <Text style={styles.expenseDate}>{expense.date}</Text>
-                      <Text style={styles.expenseAmount}>{expense.amount}</Text>
-                    </View>
-                  </View>
-                );
-              })}
+              {recentExpensesData.length > 0
+                ? recentExpensesData.map(expense => {
+                    const IconComponent = expense.icon;
+                    return (
+                      <View key={expense.id} style={styles.expenseCard}>
+                        <View
+                          style={[
+                            styles.expenseIcon,
+                            {backgroundColor: `${expense.color}20`},
+                          ]}>
+                          <IconComponent size={24} color={expense.color} />
+                        </View>
+                        <View style={styles.expenseInfo}>
+                          <Text style={styles.expenseTitle}>
+                            {expense.title}
+                          </Text>
+                          <Text style={styles.expenseDescription}>
+                            {expense.description}
+                          </Text>
+                        </View>
+                        <View style={styles.expenseRight}>
+                          <Text style={styles.expenseDate}>{expense.date}</Text>
+                          <Text style={styles.expenseAmount}>
+                            {expense.amount}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })
+                : renderEmptyState(
+                    'No Recent Expenses',
+                    'Your recent expenses will appear here',
+                    true,
+                  )}
             </View>
 
             {/* Your Transactions */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>My Transactions</Text>
-              {transactionsData.map(transaction => {
-                const IconComponent = transaction.icon;
-                return (
-                  <View key={transaction.id} style={styles.transactionCard}>
-                    <View
-                      style={[
-                        styles.transactionIcon,
-                        {backgroundColor: transaction.color},
-                      ]}>
-                      <IconComponent size={20} color="#fff" />
-                    </View>
-                    <View style={styles.transactionInfo}>
-                      <Text style={styles.transactionTitle}>
-                        {transaction.title}
-                      </Text>
-                      <Text style={styles.transactionDate}>
-                        {transaction.date}
-                      </Text>
-                    </View>
-                    <Text style={styles.transactionAmount}>
-                      {transaction.amount}
+              {transactionsData.length > 0
+                ? transactionsData.map(transaction => {
+                    const IconComponent = transaction.icon;
+                    return (
+                      <View key={transaction.id} style={styles.transactionCard}>
+                        <View
+                          style={[
+                            styles.transactionIcon,
+                            {backgroundColor: transaction.color},
+                          ]}>
+                          <IconComponent size={20} color="#fff" />
+                        </View>
+                        <View style={styles.transactionInfo}>
+                          <Text style={styles.transactionTitle}>
+                            {transaction.title}
+                          </Text>
+                          <Text style={styles.transactionDate}>
+                            {transaction.date}
+                          </Text>
+                        </View>
+                        <Text style={styles.transactionAmount}>
+                          {transaction.amount}
+                        </Text>
+                      </View>
+                    );
+                  })
+                : renderEmptyState(
+                    'No Transactions',
+                    'Your transactions will appear here',
+                    true,
+                  )}
+            </View>
+
+            {/* Savings Progress (Optional) */}
+            {totals.totalBudget > 0 && (
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Savings Progress</Text>
+                <View style={styles.savingsCard}>
+                  <View style={styles.savingsHeader}>
+                    <PiggyBank size={24} color="#4ECDC4" />
+                    <Text style={styles.savingsTitle}>
+                      Monthly Savings Goal
                     </Text>
                   </View>
-                );
-              })}
-            </View>
+                  <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBarBackground}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${savingsPercentage}%`,
+                            backgroundColor: '#4ECDC4',
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                  <Text style={styles.savingsAmount}>
+                    {savingsPercentage}% towards $
+                    {(totals.totalBudget * 0.3).toLocaleString()} goal
+                  </Text>
+                </View>
+              </View>
+            )}
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -661,91 +792,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  savingsCard: {
+    backgroundColor: '#1F1D3A',
+    borderRadius: 16,
+    padding: 16,
+  },
+  savingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  savingsTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  savingsAmount: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginTop: 8,
+  },
 });
-
-// Static data for fallback (when Redux is empty)
-const transactions = [
-  {
-    id: '1',
-    title: 'Shell',
-    date: 'Sep 02, 2022',
-    amount: '$750',
-    color: '#F97316',
-    icon: Fuel,
-  },
-  {
-    id: '2',
-    title: 'Supermart',
-    date: 'Sep 01, 2022',
-    amount: '$235',
-    color: '#22D3EE',
-    icon: ShoppingCart,
-  },
-  {
-    id: '4',
-    title: 'AMAZON',
-    date: 'Aug 31, 2022',
-    amount: '$600',
-    color: '#A855F7',
-    icon: ShoppingBag,
-  },
-];
-
-// Default budget categories (used when no expenses in Redux)
-const budgetCategories = [
-  {
-    id: '1',
-    title: 'Food',
-    percentage: 75,
-    spent: 3800,
-    total: 8000,
-    color: '#FF6B6B',
-    icon: Utensils,
-  },
-  {
-    id: '2',
-    title: 'Transport',
-    percentage: 25,
-    spent: 3800,
-    total: 8000,
-    color: '#4ECDC4',
-    icon: Car,
-  },
-  {
-    id: '3',
-    title: 'Shopping',
-    percentage: 92,
-    spent: 3800,
-    total: 8000,
-    color: '#FFD166',
-    icon: ShoppingBag,
-  },
-];
-
-// Default recent expenses (used when no expenses in Redux)
-const recentExpenses = [
-  {
-    id: '1',
-    title: 'House Rent',
-    description: 'Home',
-    date: '02 Oct 25',
-    amount: '$6000',
-    icon: Home,
-  },
-  {
-    id: '2',
-    title: 'Groceries',
-    description: 'Food',
-    date: '01 Oct 25',
-    amount: '$1050',
-    icon: ShoppingCart,
-  },
-  {
-    id: '3',
-    title: 'Netflix',
-    description: 'Entertainment',
-    date: '30 Sep 25',
-    amount: '$500',
-    icon: Tv,
-  },
-];

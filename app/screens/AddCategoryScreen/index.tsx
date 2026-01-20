@@ -1,5 +1,5 @@
 // screens/AddCategoryScreen.tsx
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,7 +30,9 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import * as ImagePicker from 'react-native-image-picker';
-import {_showToast} from '../../services/UIs/ToastConfig';
+import { _showToast } from '../../services/UIs/ToastConfig';
+import AppModal from '../../components/AppModal';
+import * as Yup from 'yup';
 
 // Default category icons
 const defaultIcons = [
@@ -84,8 +86,41 @@ interface Category {
   isDefault: boolean;
 }
 
-export default function AddCategoryScreen({navigation, route}: any) {
+// Validation schema for new category
+const newCategorySchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Category name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must not exceed 50 characters'),
+  budget: Yup.string()
+    .test('is-valid-number', 'Budget must be a valid number', (value) => {
+      if (!value || value.trim() === '') return true; // Allow empty (optional)
+      return !isNaN(Number(value)) && Number(value) >= 0;
+    })
+    .test('max-length', 'Budget is too large', (value) => {
+      if (!value) return true;
+      return Number(value) <= 1000000; // Max 1 million
+    }),
+});
+
+// Validation schema for editing category
+const editCategorySchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Category name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must not exceed 50 characters'),
+  budget: Yup.number()
+    .typeError('Budget must be a number')
+    .min(0, 'Budget cannot be negative')
+    .max(1000000, 'Budget cannot exceed $1,000,000')
+    .required('Budget is required'),
+});
+
+export default function AddCategoryScreen({ navigation, route }: any) {
   const existingCategories: Category[] = route.params?.categories || [];
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([
     ...existingCategories,
@@ -137,6 +172,29 @@ export default function AddCategoryScreen({navigation, route}: any) {
   const [showCustomIconModal, setShowCustomIconModal] = useState(false);
   const [customIcon, setCustomIcon] = useState('');
 
+
+  // Update useEffect for back handler
+  useEffect(() => {
+    // Check if there are unsaved changes
+    const hasChanges =
+      newCategory.name.trim() !== '' ||
+      newCategory.budget !== '' ||
+      categories.length !== existingCategories.length ||
+      JSON.stringify(categories) !== JSON.stringify(existingCategories);
+
+    setHasUnsavedChanges(hasChanges);
+  }, [newCategory, categories, existingCategories]);
+
+  // Update the back handler function
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      setShowModal(true);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+
   // Save categories and go back
   const handleSave = () => {
     // Filter out empty categories
@@ -178,7 +236,8 @@ export default function AddCategoryScreen({navigation, route}: any) {
   // Update category
   const handleUpdateCategory = () => {
     if (!editingCategory?.name.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+      // Alert.alert('Error', 'Please enter a category name');
+      _showToast('Please enter a category name', 'Error');
       return;
     }
 
@@ -196,7 +255,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
       'Delete Category',
       'Are you sure you want to delete this category? All expenses in this category will be deleted.',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -211,9 +270,9 @@ export default function AddCategoryScreen({navigation, route}: any) {
   // Pick icon from emoji
   const selectIcon = (icon: string) => {
     if (editingCategory) {
-      setEditingCategory({...editingCategory, icon});
+      setEditingCategory({ ...editingCategory, icon });
     } else {
-      setNewCategory({...newCategory, icon});
+      setNewCategory({ ...newCategory, icon });
     }
     setShowIconPicker(false);
   };
@@ -221,9 +280,9 @@ export default function AddCategoryScreen({navigation, route}: any) {
   // Select color
   const selectColor = (color: string) => {
     if (editingCategory) {
-      setEditingCategory({...editingCategory, color});
+      setEditingCategory({ ...editingCategory, color });
     } else {
-      setNewCategory({...newCategory, color});
+      setNewCategory({ ...newCategory, color });
     }
     setShowColorPicker(false);
   };
@@ -258,12 +317,12 @@ export default function AddCategoryScreen({navigation, route}: any) {
 
   return (
     <AppMainContainer hideTop hideBottom>
-      <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
+      <LinearGradient colors={['#141326', '#24224A']} style={{ flex: 1 }}>
         <StatusBar barStyle={'light-content'} translucent={false} />
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
           <View style={styles.header}>
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={handleBack}
               style={styles.headerButton}>
               <ChevronLeft size={24} color="#fff" />
             </TouchableOpacity>
@@ -289,7 +348,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                     style={styles.textInput}
                     value={newCategory.name}
                     onChangeText={text =>
-                      setNewCategory({...newCategory, name: text})
+                      setNewCategory({ ...newCategory, name: text })
                     }
                     placeholder="e.g., Groceries, Rent, etc."
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
@@ -301,10 +360,10 @@ export default function AddCategoryScreen({navigation, route}: any) {
                   <View style={styles.budgetInput}>
                     <DollarSign size={20} color="#F4C66A" />
                     <TextInput
-                      style={[styles.textInput, {flex: 1}]}
+                      style={[styles.textInput, { flex: 1 }]}
                       value={newCategory.budget}
                       onChangeText={text =>
-                        setNewCategory({...newCategory, budget: text})
+                        setNewCategory({ ...newCategory, budget: text })
                       }
                       placeholder="0.00"
                       placeholderTextColor="rgba(255, 255, 255, 0.5)"
@@ -323,7 +382,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                   <View
                     style={[
                       styles.iconPreview,
-                      {backgroundColor: newCategory.color},
+                      { backgroundColor: newCategory.color },
                     ]}>
                     <Text style={styles.iconText}>{newCategory.icon}</Text>
                   </View>
@@ -342,7 +401,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                   <View
                     style={[
                       styles.colorPreview,
-                      {backgroundColor: newCategory.color},
+                      { backgroundColor: newCategory.color },
                     ]}
                   />
                   <Text style={styles.colorSelectorText}>
@@ -371,7 +430,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                     <View
                       style={[
                         styles.categoryIcon,
-                        {backgroundColor: category.color},
+                        { backgroundColor: category.color },
                       ]}>
                       <Text style={styles.categoryIconText}>
                         {category.icon}
@@ -423,7 +482,11 @@ export default function AddCategoryScreen({navigation, route}: any) {
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.iconsGrid}>
+                {/* Remove justifyContent from ScrollView style */}
+                <ScrollView
+                  style={styles.iconsGrid}
+                  contentContainerStyle={styles.iconsGridContent}
+                  showsVerticalScrollIndicator={false}>
                   {defaultIcons.map((icon, index) => (
                     <TouchableOpacity
                       key={index}
@@ -482,17 +545,17 @@ export default function AddCategoryScreen({navigation, route}: any) {
                       <View
                         style={[
                           styles.colorOptionCircle,
-                          {backgroundColor: color},
+                          { backgroundColor: color },
                         ]}
                       />
                       {(editingCategory?.color === color ||
                         newCategory.color === color) && (
-                        <Check
-                          size={16}
-                          color="#fff"
-                          style={styles.colorSelected}
-                        />
-                      )}
+                          <Check
+                            size={16}
+                            color="#fff"
+                            style={styles.colorSelected}
+                          />
+                        )}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -536,6 +599,20 @@ export default function AddCategoryScreen({navigation, route}: any) {
               </View>
             </View>
           </Modal>
+          <AppModal
+            visible={showModal}
+            type="warning"
+            title="Discard Changes?"
+            message="You have unsaved changes. Are you sure you want to discard them?"
+            cancelText="Cancel"
+            confirmText="Discard"
+            onClose={() => setShowModal(false)}
+            onConfirm={() => {
+              setShowModal(false);
+              navigation.goBack();
+            }}
+          />
+
         </SafeAreaView>
       </LinearGradient>
     </AppMainContainer>
@@ -619,7 +696,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
   },
   iconSection: {
     marginBottom: 16,
@@ -762,26 +839,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   iconsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
     marginBottom: 20,
   },
+  iconsGridContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
   iconOption: {
-    width: '15%',
+    width: '19%',
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 8,
   },
   iconOptionCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconOptionText: {
-    fontSize: 24,
+    fontSize: 28,
+  },
+  colorsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'center',
   },
   customIconButton: {
     flexDirection: 'row',
@@ -797,12 +884,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-  },
-  colorsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'center',
   },
   colorOption: {
     width: 50,

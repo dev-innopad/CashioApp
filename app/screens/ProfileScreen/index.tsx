@@ -1,5 +1,5 @@
 // screens/ProfileScreen.tsx
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -33,15 +33,16 @@ import {
   Cross,
   X,
 } from 'lucide-react-native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import * as ImagePicker from 'react-native-image-picker';
 import {
   logoutUser,
   updateUserProfile,
 } from '../../store/reducers/userData.slice';
-import {_showInfoToast, _showToast} from '../../services/UIs/ToastConfig';
+import { _showInfoToast, _showToast } from '../../services/UIs/ToastConfig';
+import AppModal from '../../components/AppModal';
 
-export default function ProfileScreen({navigation}: any) {
+export default function ProfileScreen({ navigation }: any) {
   const dispatch = useDispatch();
 
   // Get user data from Redux
@@ -53,6 +54,7 @@ export default function ProfileScreen({navigation}: any) {
   const [showNewPin, setShowNewPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [isChangingPin, setIsChangingPin] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [userData, setUserData] = useState({
     name: '',
@@ -168,7 +170,7 @@ export default function ProfileScreen({navigation}: any) {
     );
 
     setIsChangingPin(false);
-    setPinData({oldPin: '', newPin: '', confirmPin: ''});
+    setPinData({ oldPin: '', newPin: '', confirmPin: '' });
     _showToast('PIN updated successfully!', 'success');
   };
 
@@ -187,7 +189,7 @@ export default function ProfileScreen({navigation}: any) {
         Alert.alert('Error', 'Failed to select image');
       } else if (response.assets && response.assets[0]) {
         const imageUri = response.assets[0].uri;
-        setUserData({...userData, profileImage: imageUri});
+        setUserData({ ...userData, profileImage: imageUri });
 
         // Update profile image in Redux
         dispatch(
@@ -200,20 +202,21 @@ export default function ProfileScreen({navigation}: any) {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          dispatch(logoutUser());
-          navigation.reset({
-            index: 0,
-            routes: [{name: 'PinScreen'}],
-          });
-        },
-      },
-    ]);
+    // Alert.alert('Logout', 'Are you sure you want to logout?', [
+    //   {text: 'Cancel', style: 'cancel'},
+    //   {
+    //     text: 'Logout',
+    //     style: 'destructive',
+    //     onPress: () => {
+    //       dispatch(logoutUser());
+    //       navigation.reset({
+    //         index: 0,
+    //         routes: [{name: 'PinScreen'}],
+    //       });
+    //     },
+    //   },
+    // ]);
+    setShowLogoutModal(true);
   };
 
   const isValidEmail = (email: string) => {
@@ -237,7 +240,7 @@ export default function ProfileScreen({navigation}: any) {
         <TextInput
           style={styles.textInput}
           value={value}
-          onChangeText={text => setUserData({...userData, [key]: text})}
+          onChangeText={text => setUserData({ ...userData, [key]: text })}
           placeholder={`Enter ${label}`}
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
           keyboardType={keyboardType}
@@ -271,7 +274,7 @@ export default function ProfileScreen({navigation}: any) {
           style={styles.pinInput}
           value={value}
           onChangeText={text =>
-            setPinData({...pinData, [key]: text.replace(/[^0-9]/g, '')})
+            setPinData({ ...pinData, [key]: text.replace(/[^0-9]/g, '') })
           }
           placeholder="••••"
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
@@ -298,9 +301,9 @@ export default function ProfileScreen({navigation}: any) {
 
   return (
     <AppMainContainer hideTop hideBottom>
-      <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
+      <LinearGradient colors={['#141326', '#24224A']} style={{ flex: 1 }}>
         <StatusBar barStyle={'light-content'} translucent={false} />
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
@@ -313,7 +316,7 @@ export default function ProfileScreen({navigation}: any) {
               <View style={styles.avatarContainer}>
                 {userData.profileImage ? (
                   <Image
-                    source={{uri: userData.profileImage}}
+                    source={{ uri: userData.profileImage }}
                     style={styles.avatarImage}
                   />
                 ) : (
@@ -481,7 +484,7 @@ export default function ProfileScreen({navigation}: any) {
                   <View
                     style={[
                       styles.controlIcon,
-                      {backgroundColor: 'rgba(168, 85, 247, 0.2)'},
+                      { backgroundColor: 'rgba(168, 85, 247, 0.2)' },
                     ]}>
                     <Bell size={24} color="#A855F7" />
                   </View>
@@ -494,7 +497,7 @@ export default function ProfileScreen({navigation}: any) {
                   <View
                     style={[
                       styles.controlIcon,
-                      {backgroundColor: 'rgba(255, 107, 107, 0.2)'},
+                      { backgroundColor: 'rgba(255, 107, 107, 0.2)' },
                     ]}>
                     <LogOut size={24} color="#FF6B6B" />
                   </View>
@@ -503,6 +506,24 @@ export default function ProfileScreen({navigation}: any) {
               </View>
             </View>
           </ScrollView>
+          <AppModal
+            visible={showLogoutModal}
+            type="error"
+            title="Logout"
+            message="Are you sure you want to logout?"
+            cancelText="Cancel"
+            confirmText="Logout"
+            onClose={() => setShowLogoutModal(false)}
+            onConfirm={() => {
+              setShowLogoutModal(false);
+              dispatch(logoutUser());
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'PinScreen' }],
+              });
+            }}
+          />
+
         </SafeAreaView>
       </LinearGradient>
     </AppMainContainer>

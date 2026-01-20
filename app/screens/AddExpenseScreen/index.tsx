@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
   },
   receiptOptions: {
     gap: 12,

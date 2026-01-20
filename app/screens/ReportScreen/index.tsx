@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import {
   Download,
   Share2,
   Filter,
-  PieChart,
+  PieChart as PieChartIcon,
   BarChart3,
   Calendar,
   Home,
@@ -41,96 +41,61 @@ import {
   Settings,
   MoreVertical,
   Target,
+  Coffee,
+  Film,
+  Heart,
+  Book,
+  Bus,
+  Plane,
+  Music,
+  Gamepad2,
+  Dumbbell,
+  GraduationCap,
+  Gift,
+  Wifi,
+  Phone,
+  Zap,
+  Cloud,
+  Package,
 } from 'lucide-react-native';
 import {BarChart, PieChart as RNPPieChart} from 'react-native-gifted-charts';
-import {ProgressCircle} from 'react-native-svg-charts';
 import Svg, {Circle} from 'react-native-svg';
 import {_showToast} from '../../services/UIs/ToastConfig';
+import {useSelector} from 'react-redux';
+import {NavigationKeys} from '../../constants/navigationKeys';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 export default function ReportScreen({navigation}: any) {
+  // Get data from Redux using memoized selectors
+  const expenses = useSelector((state: any) => state.userData.expenses || []);
+  const categories = useSelector(
+    (state: any) => state.userData.categories || [],
+  );
+  const monthlyBudget = useSelector(
+    (state: any) => state.userData.monthlyBudget || 0,
+  );
+
+  // Memoize the data to prevent unnecessary rerenders
+  const memoizedExpenses = useMemo(() => expenses, [JSON.stringify(expenses)]);
+  const memoizedCategories = useMemo(
+    () => categories,
+    [JSON.stringify(categories)],
+  );
+
   // State for dynamic data
   const [selectedPeriod, setSelectedPeriod] = useState('Monthly');
-  const [expenseTrendData, setExpenseTrendData] = useState([
-    {value: 2000, label: 'Week1', frontColor: '#F97316'},
-    {value: 4000, label: 'Week2', frontColor: '#22D3EE'},
-    {value: 3000, label: 'Week3', frontColor: '#86EFAC'},
-    {value: 2000, label: 'Week4', frontColor: '#A855F7'},
-  ]);
-
+  const [expenseTrendData, setExpenseTrendData] = useState([]);
   const [statistics, setStatistics] = useState({
-    totalExpense: 20800,
-    totalSave: 9200,
-    budget: 20000,
-    expenseChange: 12.5,
-    savingsChange: 8.2,
+    totalExpense: 0,
+    totalSave: 0,
+    budget: monthlyBudget,
+    expenseChange: 0,
+    savingsChange: 0,
   });
 
   // Expense Breakdown State
-  const [expenseBreakdown, setExpenseBreakdown] = useState([
-    {
-      id: '1',
-      category: 'Home',
-      icon: Home,
-      color: '#F97316',
-      percentage: 35,
-      amount: 7280,
-      budget: 10000,
-      trend: 12,
-      transactions: 24,
-      expanded: false,
-    },
-    {
-      id: '2',
-      category: 'Transport',
-      icon: Car,
-      color: '#22D3EE',
-      percentage: 25,
-      amount: 5200,
-      budget: 6000,
-      trend: -8,
-      transactions: 18,
-      expanded: false,
-    },
-    {
-      id: '3',
-      category: 'Shopping',
-      icon: ShoppingBag,
-      color: '#86EFAC',
-      percentage: 20,
-      amount: 4160,
-      budget: 5000,
-      trend: 5,
-      transactions: 32,
-      expanded: false,
-    },
-    {
-      id: '4',
-      category: 'Food',
-      icon: Utensils,
-      color: '#A855F7',
-      percentage: 15,
-      amount: 3120,
-      budget: 4000,
-      trend: 15,
-      transactions: 45,
-      expanded: false,
-    },
-    {
-      id: '5',
-      category: 'Entertainment',
-      icon: Airplay,
-      color: '#FF6B6B',
-      percentage: 5,
-      amount: 1040,
-      budget: 2000,
-      trend: 25,
-      transactions: 12,
-      expanded: false,
-    },
-  ]);
-
+  const [expenseBreakdown, setExpenseBreakdown] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -138,7 +103,247 @@ export default function ReportScreen({navigation}: any) {
 
   const periods = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
 
+  // Calculate dynamic data with useMemo to prevent infinite loops
+  const calculatedData = useMemo(() => {
+    const totalExpense = memoizedExpenses.reduce(
+      (sum: number, exp: any) => sum + (exp.amount || 0),
+      0,
+    );
+    const budget = monthlyBudget || 0;
+    const savingsGoal = budget * 0.3;
+    const totalSave = Math.max(0, savingsGoal - totalExpense);
+
+    return {
+      totalExpense,
+      totalSave,
+      budget,
+      expenseChange: totalExpense > 0 ? 12.5 : 0,
+      savingsChange: totalSave > 0 ? 8.2 : 0,
+    };
+  }, [memoizedExpenses, monthlyBudget]);
+
+  // Calculate expense trend data based on selected period
+  const calculateExpenseTrendData = useCallback(() => {
+    if (!memoizedExpenses || memoizedExpenses.length === 0) {
+      return [];
+    }
+
+    let data = [];
+    const colors = [
+      '#F97316',
+      '#22D3EE',
+      '#86EFAC',
+      '#A855F7',
+      '#FF6B6B',
+      '#4ECDC4',
+    ];
+
+    const now = new Date();
+
+    switch (selectedPeriod) {
+      case 'Daily':
+        data = Array.from({length: 7}, (_, i) => {
+          const date = new Date(now);
+          date.setDate(date.getDate() - (6 - i));
+          const dayStart = new Date(date.setHours(0, 0, 0, 0));
+          const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+
+          const dayExpenses = memoizedExpenses.filter((expense: any) => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= dayStart && expenseDate <= dayEnd;
+          });
+
+          const total = dayExpenses.reduce(
+            (sum: number, exp: any) => sum + (exp.amount || 0),
+            0,
+          );
+
+          return {
+            value: total,
+            label: date
+              .toLocaleDateString('en-US', {weekday: 'short'})
+              .charAt(0),
+            frontColor: colors[i % colors.length],
+            spacing: 20,
+          };
+        });
+        break;
+
+      case 'Weekly':
+        data = Array.from({length: 4}, (_, index) => {
+          const weekStart = new Date(now);
+          weekStart.setDate(weekStart.getDate() - (3 - index) * 7);
+          weekStart.setHours(0, 0, 0, 0);
+
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
+
+          const weekExpenses = memoizedExpenses.filter((expense: any) => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= weekStart && expenseDate <= weekEnd;
+          });
+
+          const total = weekExpenses.reduce(
+            (sum: number, exp: any) => sum + (exp.amount || 0),
+            0,
+          );
+
+          return {
+            value: total,
+            label: `W${index + 1}`,
+            frontColor: colors[index % colors.length],
+          };
+        });
+        break;
+
+      case 'Monthly':
+        data = Array.from({length: 6}, (_, index) => {
+          const month = new Date(now);
+          month.setMonth(month.getMonth() - (5 - index));
+          const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+          const monthEnd = new Date(
+            month.getFullYear(),
+            month.getMonth() + 1,
+            0,
+          );
+          monthEnd.setHours(23, 59, 59, 999);
+
+          const monthExpenses = memoizedExpenses.filter((expense: any) => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= monthStart && expenseDate <= monthEnd;
+          });
+
+          const total = monthExpenses.reduce(
+            (sum: number, exp: any) => sum + (exp.amount || 0),
+            0,
+          );
+
+          return {
+            value: total,
+            label: month.toLocaleDateString('en-US', {month: 'short'}),
+            frontColor: colors[index % colors.length],
+          };
+        });
+        break;
+
+      case 'Yearly':
+        data = Array.from({length: 4}, (_, index) => {
+          const year = now.getFullYear() - (3 - index);
+          const yearStart = new Date(year, 0, 1);
+          const yearEnd = new Date(year, 11, 31);
+          yearEnd.setHours(23, 59, 59, 999);
+
+          const yearExpenses = memoizedExpenses.filter((expense: any) => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= yearStart && expenseDate <= yearEnd;
+          });
+
+          const total = yearExpenses.reduce(
+            (sum: number, exp: any) => sum + (exp.amount || 0),
+            0,
+          );
+
+          return {
+            value: total,
+            label: year.toString(),
+            frontColor: colors[index % colors.length],
+          };
+        });
+        break;
+    }
+
+    return data;
+  }, [memoizedExpenses, selectedPeriod]);
+
+  // Calculate expense breakdown by category
+  const calculateExpenseBreakdown = useCallback(() => {
+    if (
+      !memoizedExpenses ||
+      memoizedExpenses.length === 0 ||
+      !memoizedCategories ||
+      memoizedCategories.length === 0
+    ) {
+      return [];
+    }
+
+    // Initialize category totals
+    const categoryTotals: Record<string, any> = {};
+
+    // Initialize with categories that have budget
+    memoizedCategories.forEach((cat: any) => {
+      if (cat && cat.name && (cat.budget || 0) > 0) {
+        categoryTotals[cat.name] = {
+          id: cat.id || cat.name,
+          category: cat.name,
+          icon: getCategoryIcon(cat.name),
+          color: cat.color || '#F97316',
+          amount: 0,
+          budget: cat.budget || 0,
+          transactions: 0,
+          expanded: false,
+        };
+      }
+    });
+
+    // Calculate spent per category
+    memoizedExpenses.forEach((expense: any) => {
+      let categoryName = '';
+
+      if (typeof expense.category === 'string') {
+        categoryName = expense.category;
+      } else if (expense.category && expense.category.name) {
+        categoryName = expense.category.name;
+      }
+
+      if (categoryName && categoryTotals[categoryName]) {
+        categoryTotals[categoryName].amount += expense.amount || 0;
+        categoryTotals[categoryName].transactions += 1;
+      }
+    });
+
+    // Convert to array and calculate percentages
+    const totalSpent = Object.values(categoryTotals).reduce(
+      (sum: number, cat: any) => sum + cat.amount,
+      0,
+    );
+
+    const breakdownArray = Object.values(categoryTotals)
+      .filter((cat: any) => cat.budget > 0)
+      .map((cat: any) => {
+        const percentage = (cat.amount / cat.budget) * 100;
+        const breakdownPercentage =
+          totalSpent > 0 ? (cat.amount / totalSpent) * 100 : 0;
+
+        // Calculate trend (simplified)
+        const trend = cat.amount > cat.budget ? -10 : Math.random() * 20;
+
+        return {
+          ...cat,
+          percentage: Math.min(Math.round(percentage), 100),
+          breakdownPercentage: Math.round(breakdownPercentage),
+          trend: Math.round(trend),
+        };
+      })
+      .sort((a: any, b: any) => b.amount - a.amount);
+
+    return breakdownArray;
+  }, [memoizedExpenses, memoizedCategories]);
+
+  // Use effects to update state only when needed
   useEffect(() => {
+    // Update statistics
+    setStatistics(calculatedData);
+
+    // Update trend data
+    const trendData = calculateExpenseTrendData();
+    setExpenseTrendData(trendData);
+
+    // Update breakdown
+    const breakdown = calculateExpenseBreakdown();
+    setExpenseBreakdown(breakdown);
+
+    // Animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -153,118 +358,156 @@ export default function ReportScreen({navigation}: any) {
         easing: Easing.out(Easing.cubic),
       }),
     ]).start();
+  }, [
+    calculatedData,
+    calculateExpenseTrendData,
+    calculateExpenseBreakdown,
+    fadeAnim,
+    slideAnim,
+  ]);
+
+  // Helper function to get icon based on category name
+  const getCategoryIcon = useCallback((categoryName: string) => {
+    const lowerName = categoryName.toLowerCase();
+
+    if (
+      lowerName.includes('food') ||
+      lowerName.includes('grocer') ||
+      lowerName.includes('restaurant')
+    )
+      return Utensils;
+    if (
+      lowerName.includes('transport') ||
+      lowerName.includes('car') ||
+      lowerName.includes('gas')
+    )
+      return Car;
+    if (lowerName.includes('shop') || lowerName.includes('retail'))
+      return ShoppingBag;
+    if (
+      lowerName.includes('home') ||
+      lowerName.includes('rent') ||
+      lowerName.includes('mortgage')
+    )
+      return Home;
+    if (
+      lowerName.includes('entertain') ||
+      lowerName.includes('movie') ||
+      lowerName.includes('netflix')
+    )
+      return Airplay;
+    if (lowerName.includes('health') || lowerName.includes('medical'))
+      return Heart;
+    if (lowerName.includes('education') || lowerName.includes('school'))
+      return GraduationCap;
+    if (lowerName.includes('coffee') || lowerName.includes('cafe'))
+      return Coffee;
+    if (
+      lowerName.includes('travel') ||
+      lowerName.includes('flight') ||
+      lowerName.includes('hotel')
+    )
+      return Plane;
+    if (lowerName.includes('fuel') || lowerName.includes('gasoline'))
+      return Zap;
+    if (lowerName.includes('gym') || lowerName.includes('fitness'))
+      return Dumbbell;
+    if (lowerName.includes('gift') || lowerName.includes('donation'))
+      return Gift;
+    if (lowerName.includes('internet') || lowerName.includes('wifi'))
+      return Wifi;
+    if (lowerName.includes('phone') || lowerName.includes('mobile'))
+      return Phone;
+    if (lowerName.includes('music') || lowerName.includes('spotify'))
+      return Music;
+    if (lowerName.includes('game') || lowerName.includes('gaming'))
+      return Gamepad2;
+    if (lowerName.includes('subscription') || lowerName.includes('cloud'))
+      return Cloud;
+    if (lowerName.includes('delivery') || lowerName.includes('package'))
+      return Package;
+
+    return DollarSign;
   }, []);
 
   // Function to handle period change
-  const handlePeriodChange = (period: string) => {
+  const handlePeriodChange = useCallback((period: string) => {
     setSelectedPeriod(period);
-    // Update trend data based on period
-    const mockData = {
-      Daily: [2000, 1500, 1800, 2200],
-      Weekly: [2000, 4000, 3000, 2000],
-      Monthly: [12000, 15000, 10000, 13000],
-      Yearly: [12000, 16000, 18000, 20000],
-    };
-
-    const newTrendData = mockData[period as keyof typeof mockData].map(
-      (value, index) => ({
-        value,
-        label:
-          period === 'Daily'
-            ? `Day${index + 1}`
-            : period === 'Weekly'
-            ? `Week${index + 1}`
-            : period === 'Monthly'
-            ? `Month${index + 1}`
-            : `Q${index + 1}`,
-        frontColor: ['#F97316', '#22D3EE', '#86EFAC', '#A855F7'][index],
-      }),
-    );
-
-    setExpenseTrendData(newTrendData);
-
-    // Update statistics based on period
-    const statMultipliers = {
-      Daily: {expense: 20800, save: 9200, budget: 20000},
-      Weekly: {expense: 5200, save: 2300, budget: 5000},
-      Monthly: {expense: 20800, save: 9200, budget: 20000},
-      Yearly: {expense: 249600, save: 110400, budget: 240000},
-    };
-
-    const newStats = statMultipliers[period as keyof typeof statMultipliers];
-    setStatistics(prev => ({
-      ...prev,
-      totalExpense: newStats.expense,
-      totalSave: newStats.save,
-      budget: newStats.budget,
-    }));
-  };
+  }, []);
 
   // Function to export report
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     console.log('Exporting report...');
     _showToast('Coming Soon', 'info');
-  };
-
-  // Function to share report
-  const handleShare = () => {
-    console.log('Sharing report...');
-  };
-
-  // Function to filter data
-  const handleFilter = () => {
-    console.log('Opening filter...');
-  };
+  }, []);
 
   // Toggle category expansion
-  const toggleCategory = (id: string) => {
-    setExpenseBreakdown(prev =>
-      prev.map(item =>
-        item.id === id ? {...item, expanded: !item.expanded} : item,
-      ),
-    );
-    setSelectedCategory(selectedCategory === id ? null : id);
-  };
+  const toggleCategory = useCallback(
+    (id: string) => {
+      setExpenseBreakdown(prev =>
+        prev.map(item =>
+          item.id === id ? {...item, expanded: !item.expanded} : item,
+        ),
+      );
+      setSelectedCategory(selectedCategory === id ? null : id);
+    },
+    [selectedCategory],
+  );
 
   // Toggle all details
-  const toggleAllDetails = () => {
+  const toggleAllDetails = useCallback(() => {
     setShowDetails(!showDetails);
-  };
+  }, [showDetails]);
 
   // Calculate totals
-  const totalSpent = expenseBreakdown.reduce(
-    (sum, item) => sum + item.amount,
-    0,
-  );
-  const totalBudget = expenseBreakdown.reduce(
-    (sum, item) => sum + item.budget,
-    0,
-  );
-  const remainingBudget = totalBudget - totalSpent;
-  const budgetUtilization = (totalSpent / totalBudget) * 100;
+  const totals = useMemo(() => {
+    const totalSpent = expenseBreakdown.reduce(
+      (sum: number, item: any) => sum + item.amount,
+      0,
+    );
+    const totalBudget = expenseBreakdown.reduce(
+      (sum: number, item: any) => sum + item.budget,
+      0,
+    );
+    const remainingBudget = totalBudget - totalSpent;
+    const budgetUtilization =
+      totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+    return {totalSpent, totalBudget, remainingBudget, budgetUtilization};
+  }, [expenseBreakdown]);
 
   // Get top spending category
-  const topCategory = expenseBreakdown.reduce((prev, current) =>
-    prev.amount > current.amount ? prev : current,
-  );
+  const topCategory = useMemo(() => {
+    return expenseBreakdown.length > 0
+      ? expenseBreakdown.reduce((prev: any, current: any) =>
+          prev.amount > current.amount ? prev : current,
+        )
+      : null;
+  }, [expenseBreakdown]);
 
   // Get highest trend
-  const highestTrend = expenseBreakdown.reduce((prev, current) =>
-    Math.abs(prev.trend) > Math.abs(current.trend) ? prev : current,
-  );
+  const highestTrend = useMemo(() => {
+    return expenseBreakdown.length > 0
+      ? expenseBreakdown.reduce((prev: any, current: any) =>
+          Math.abs(prev.trend) > Math.abs(current.trend) ? prev : current,
+        )
+      : null;
+  }, [expenseBreakdown]);
 
   // Enhanced Pie Chart Data
-  const pieChartData = expenseBreakdown.map(item => ({
-    value: item.percentage,
-    color: item.color,
-    label: item.category,
-    gradientCenterColor: item.color,
-    focused: selectedCategory === item.id,
-  }));
+  const pieChartData = useMemo(() => {
+    return expenseBreakdown.map((item: any) => ({
+      value: item.breakdownPercentage,
+      color: item.color,
+      label: item.category,
+      gradientCenterColor: item.color,
+      focused: selectedCategory === item.id,
+    }));
+  }, [expenseBreakdown, selectedCategory]);
 
   // Render Circular Progress for each category
-  const renderCategoryProgress = (item: any) => {
-    const progress = (item.amount / item.budget) * 100;
+  const renderCategoryProgress = useCallback((item: any) => {
+    const progress = item.percentage;
     const strokeWidth = 4;
     const radius = 22;
     const circumference = 2 * Math.PI * radius;
@@ -273,7 +516,6 @@ export default function ReportScreen({navigation}: any) {
     return (
       <View style={styles.progressContainer}>
         <Svg width="50" height="50">
-          {/* Background Circle */}
           <Circle
             cx="25"
             cy="25"
@@ -282,7 +524,6 @@ export default function ReportScreen({navigation}: any) {
             strokeWidth={strokeWidth}
             fill="transparent"
           />
-          {/* Progress Circle */}
           <Circle
             cx="25"
             cy="25"
@@ -304,10 +545,10 @@ export default function ReportScreen({navigation}: any) {
         </View>
       </View>
     );
-  };
+  }, []);
 
   // Render Trend Indicator
-  const renderTrendIndicator = (trend: number) => {
+  const renderTrendIndicator = useCallback((trend: number) => {
     const isPositive = trend > 0;
     return (
       <View
@@ -335,7 +576,26 @@ export default function ReportScreen({navigation}: any) {
         </Text>
       </View>
     );
-  };
+  }, []);
+
+  // Render empty state
+  const renderEmptyState = useCallback(
+    (title: string, message: string) => (
+      <View style={styles.emptyState}>
+        <PieChartIcon size={48} color="rgba(255, 255, 255, 0.3)" />
+        <Text style={styles.emptyStateTitle}>{title}</Text>
+        <Text style={styles.emptyStateText}>{message}</Text>
+        <TouchableOpacity
+          style={styles.emptyStateButton}
+          onPress={() => navigation.navigate(NavigationKeys.AddExpenseScreen)}>
+          <Text style={styles.emptyStateButtonText}>
+            Add Your First Expense
+          </Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [navigation],
+  );
 
   return (
     <AppMainContainer hideTop hideBottom>
@@ -343,30 +603,21 @@ export default function ReportScreen({navigation}: any) {
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
           <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.goBack()}>
+              <ChevronLeft size={24} color="#fff" />
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>Report</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={handleExport}>
-                <Download size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={handleExport}>
+              <Download size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
-            {/* Header */}
-
-            {/* Statistics Header */}
-            <View style={styles.statisticsHeader}>
-              <View>
-                {/* <Text style={styles.statisticsTitle}>Statistics</Text> */}
-                <Text style={styles.statisticsSubtitle}>
-                  Visualizing progress through numbers
-                </Text>
-              </View>
-            </View>
-
             {/* Period Selector */}
             <View style={styles.periodSelector}>
               {periods.map(period => (
@@ -389,475 +640,583 @@ export default function ReportScreen({navigation}: any) {
               ))}
             </View>
 
-            {/* Budget Card */}
-            <View style={styles.budgetCard}>
-              <View style={styles.budgetHeader}>
-                <DollarSign size={24} color="#F4C66A" />
-                <Text style={styles.budgetTitle}>Budget</Text>
-              </View>
-              <Text style={styles.budgetAmount}>
-                ${statistics.budget.toLocaleString()}
-              </Text>
-              <View style={styles.budgetProgress}>
-                <View style={styles.progressBarBackground}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${
-                          (statistics.totalExpense / statistics.budget) * 100
-                        }%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.budgetStatus}>
-                  {statistics.totalExpense > statistics.budget
-                    ? 'Over budget'
-                    : 'Within budget'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Statistics Cards */}
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <View style={styles.statHeader}>
-                  <DollarSign size={20} color="#FF6B6B" />
-                  <Text style={styles.statTitle}>Total Expense</Text>
-                </View>
-                <Text style={styles.statAmount}>
-                  ${statistics.totalExpense.toLocaleString()}
-                </Text>
-                <View style={styles.statChange}>
-                  <ArrowUpRight size={16} color="#FF6B6B" />
-                  <Text style={[styles.changeText, {color: '#FF6B6B'}]}>
-                    +{statistics.expenseChange}%
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.statCard}>
-                <View style={styles.statHeader}>
-                  <PiggyBank size={20} color="#4ECDC4" />
-                  <Text style={styles.statTitle}>Total Save</Text>
-                </View>
-                <Text style={styles.statAmount}>
-                  ${statistics.totalSave.toLocaleString()}
-                </Text>
-                <View style={styles.statChange}>
-                  <ArrowUpRight size={16} color="#4ECDC4" />
-                  <Text style={[styles.changeText, {color: '#4ECDC4'}]}>
-                    +{statistics.savingsChange}%
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Expense Trend Chart */}
-            <View style={styles.chartContainer}>
-              <View style={styles.chartHeader}>
-                <BarChart3 size={24} color="#fff" />
-                <Text style={styles.chartTitle}>Expense Trend</Text>
-              </View>
-
-              <View style={styles.chartWrapper}>
-                <BarChart
-                  data={expenseTrendData}
-                  barWidth={40}
-                  spacing={30}
-                  roundedTop
-                  roundedBottom
-                  hideRules
-                  xAxisThickness={0}
-                  yAxisThickness={0}
-                  yAxisTextStyle={{
-                    color: 'rgba(255,255,255,0.5)',
-                    fontSize: 12,
-                  }}
-                  xAxisLabelTextStyle={{
-                    color: 'rgba(255,255,255,0.5)',
-                    fontSize: 12,
-                  }}
-                  noOfSections={4}
-                  maxValue={
-                    Math.max(...expenseTrendData.map(d => d.value)) * 1.2
-                  }
-                  height={180}
-                  width={SCREEN_WIDTH - 80}
-                />
-              </View>
-            </View>
-
-            <Animated.View
-              style={[
-                styles.advancedBreakdownContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{translateY: slideAnim}],
-                },
-              ]}>
-              {/* Section Header with Stats */}
-              <View style={styles.breakdownHeader}>
-                <View>
-                  <Text style={styles.breakdownTitle}>Expense Analytics</Text>
-                  <Text style={styles.breakdownSubtitle}>
-                    Detailed category breakdown
-                  </Text>
-                </View>
-              </View>
-
-              {/* Summary Cards */}
-              <View style={styles.summaryCards}>
-                <View style={styles.summaryCard}>
-                  <View style={styles.summaryCardHeader}>
-                    <DollarSign size={20} color="#F4C66A" />
-                    <Text style={styles.summaryCardTitle}>Total Spent</Text>
+            {/* Main Statistics */}
+            {memoizedExpenses.length === 0 ? (
+              renderEmptyState(
+                'No Expense Data',
+                'Start tracking your expenses to see detailed reports and insights',
+              )
+            ) : (
+              <>
+                {/* Budget Card */}
+                <View style={styles.budgetCard}>
+                  <View style={styles.budgetHeader}>
+                    <DollarSign size={24} color="#F4C66A" />
+                    <Text style={styles.budgetTitle}>Budget</Text>
                   </View>
-                  <Text style={styles.summaryCardValue}>
-                    ${totalSpent.toLocaleString()}
+                  <Text style={styles.budgetAmount}>
+                    ${statistics.budget.toLocaleString()}
                   </Text>
-                  <Text style={styles.summaryCardSubtext}>
-                    of ${totalBudget.toLocaleString()} budget
-                  </Text>
-                </View>
-
-                <View style={styles.summaryCard}>
-                  <View style={styles.summaryCardHeader}>
-                    <Target size={20} color="#4ECDC4" />
-                    <Text style={styles.summaryCardTitle}>Budget Used</Text>
-                  </View>
-                  <Text style={styles.summaryCardValue}>
-                    {Math.round(budgetUtilization)}%
-                  </Text>
-                  <Text style={styles.summaryCardSubtext}>
-                    ${remainingBudget.toLocaleString()} remaining
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.categoryListTitle}>Category Breakdown</Text>
-
-              <View style={styles.chartContainer}>
-                <View style={styles.pieChartWrapper}>
-                  <RNPPieChart
-                    data={pieChartData}
-                    donut
-                    radius={140}
-                    innerRadius={85}
-                    focusOnPress={true} // Enable focus on press
-                    strokeWidth={0}
-                    innerCircleColor="#1F1D3A"
-                    innerCircleBorderWidth={0}
-                    innerCircleBorderColor="transparent"
-                    // showText
-                    // showValuesAsLabels
-                    // textColor="#fff"
-                    // textSize={14}
-                    showTextBackground={false}
-                    onPress={(item: any, index: number) => {
-                      // When pie chart segment is pressed, toggle that category
-                      const category = expenseBreakdown.find(
-                        cat => cat.category === item.label,
-                      );
-                      if (category) {
-                        toggleCategory(category.id);
-                      }
-                    }}
-                    centerLabelComponent={() => (
-                      <View style={styles.centerLabel}>
-                        <Text style={styles.centerLabelTitle}>Total</Text>
-                        <Text style={styles.centerLabelValue}>
-                          ${totalSpent.toLocaleString()}
-                        </Text>
-                        <Text style={styles.centerLabelSubtitle}>
-                          {expenseBreakdown.length} categories
-                        </Text>
-                      </View>
-                    )}
-                  />
-                </View>
-
-                {/* Default Detailed Category Cards View */}
-                <View style={styles.categoryListContainer}>
-                  <View style={styles.detailedCategoryView}>
-                    {expenseBreakdown.map(item => {
-                      const IconComponent = item.icon;
-                      const progress = (item.amount / item.budget) * 100;
-                      const isOverBudget = progress > 100;
-
-                      return (
-                        <TouchableOpacity
-                          key={item.id}
-                          style={[
-                            styles.detailedCategoryCard,
-                            selectedCategory === item.id &&
-                              styles.categoryListItemSelected,
-                          ]}
-                          onPress={() => toggleCategory(item.id)}
-                          activeOpacity={0.8}>
-                          <View style={styles.detailedCardHeader}>
-                            <View style={styles.detailedCategoryLeft}>
-                              <View
-                                style={[
-                                  styles.categoryDotLarge,
-                                  {backgroundColor: item.color},
-                                ]}
-                              />
-                              <IconComponent size={20} color="#fff" />
-                              <Text style={styles.detailedCategoryName}>
-                                {item.category}
-                              </Text>
-                            </View>
-                            <View style={styles.detailedCategoryRight}>
-                              <Text style={styles.detailedCategoryPercentage}>
-                                {item.percentage}%
-                              </Text>
-                            </View>
-                          </View>
-
-                          <View style={styles.detailedCardBody}>
-                            <Text style={styles.detailedCategoryAmount}>
-                              ${item.amount.toLocaleString()}
-                            </Text>
-                            <View style={styles.detailedProgressContainer}>
-                              <View
-                                style={styles.detailedProgressBarBackground}>
-                                <View
-                                  style={[
-                                    styles.detailedProgressBarFill,
-                                    {
-                                      width: `${Math.min(progress, 100)}%`,
-                                      backgroundColor: isOverBudget
-                                        ? '#FF6B6B'
-                                        : item.color,
-                                    },
-                                  ]}
-                                />
-                              </View>
-                              <Text style={styles.detailedProgressText}>
-                                {Math.round(progress)}% of $
-                                {item.budget.toLocaleString()}
-                              </Text>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                  <View style={styles.budgetProgress}>
+                    <View style={styles.progressBarBackground}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${Math.min(
+                              (statistics.totalExpense / statistics.budget) *
+                                100,
+                              100,
+                            )}%`,
+                            backgroundColor:
+                              statistics.totalExpense > statistics.budget
+                                ? '#FF6B6B'
+                                : '#F97316',
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.budgetStatus}>
+                      {statistics.totalExpense > statistics.budget
+                        ? `Over budget by $${(
+                            statistics.totalExpense - statistics.budget
+                          ).toLocaleString()}`
+                        : `Within budget - $${(
+                            statistics.budget - statistics.totalExpense
+                          ).toLocaleString()} remaining`}
+                    </Text>
                   </View>
                 </View>
-              </View>
 
-              {/* Expanded Category Details (Only when individual category is expanded) */}
-              {expenseBreakdown
-                .filter(item => item.expanded)
-                .map(item => {
-                  const IconComponent = item.icon;
-                  const progress = (item.amount / item.budget) * 100;
-                  const isOverBudget = progress > 100;
+                {/* Statistics Cards */}
+                <View style={styles.statsRow}>
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <DollarSign size={20} color="#FF6B6B" />
+                      <Text style={styles.statTitle}>Total Expense</Text>
+                    </View>
+                    <Text style={styles.statAmount}>
+                      ${statistics.totalExpense.toLocaleString()}
+                    </Text>
+                    <View style={styles.statChange}>
+                      {statistics.expenseChange > 0 ? (
+                        <ArrowUpRight size={16} color="#FF6B6B" />
+                      ) : (
+                        <ArrowDownRight size={16} color="#4ECDC4" />
+                      )}
+                      <Text
+                        style={[
+                          styles.changeText,
+                          {
+                            color:
+                              statistics.expenseChange > 0
+                                ? '#FF6B6B'
+                                : '#4ECDC4',
+                          },
+                        ]}>
+                        {statistics.expenseChange > 0 ? '+' : ''}
+                        {statistics.expenseChange}%
+                      </Text>
+                    </View>
+                  </View>
 
-                  return (
-                    <Animated.View
-                      key={item.id}
-                      style={[styles.expandedCategoryCard]}>
-                      <TouchableOpacity
-                        style={styles.categoryCardHeader}
-                        // onPress={() => toggleCategory(item.id)}
-                        activeOpacity={0.7}>
-                        <View style={styles.categoryHeaderLeft}>
-                          <View
-                            style={[
-                              styles.categoryIconContainer,
-                              {backgroundColor: `${item.color}20`},
-                            ]}>
-                            <IconComponent size={20} color={item.color} />
-                          </View>
-                          <View>
-                            <Text style={styles.categoryName}>
-                              {item.category}
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <PiggyBank size={20} color="#4ECDC4" />
+                      <Text style={styles.statTitle}>Total Save</Text>
+                    </View>
+                    <Text style={styles.statAmount}>
+                      ${statistics.totalSave.toLocaleString()}
+                    </Text>
+                    <View style={styles.statChange}>
+                      {statistics.savingsChange > 0 ? (
+                        <ArrowUpRight size={16} color="#4ECDC4" />
+                      ) : (
+                        <ArrowDownRight size={16} color="#FF6B6B" />
+                      )}
+                      <Text
+                        style={[
+                          styles.changeText,
+                          {
+                            color:
+                              statistics.savingsChange > 0
+                                ? '#4ECDC4'
+                                : '#FF6B6B',
+                          },
+                        ]}>
+                        {statistics.savingsChange > 0 ? '+' : ''}
+                        {statistics.savingsChange}%
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Expense Trend Chart */}
+                {expenseTrendData.length > 0 && (
+                  <View style={styles.chartContainer}>
+                    <View style={styles.chartHeader}>
+                      <BarChart3 size={24} color="#fff" />
+                      <Text style={styles.chartTitle}>
+                        Expense Trend ({selectedPeriod})
+                      </Text>
+                    </View>
+
+                    <View style={styles.chartWrapper}>
+                      <BarChart
+                        data={expenseTrendData}
+                        barWidth={30}
+                        spacing={25}
+                        roundedTop
+                        roundedBottom
+                        hideRules
+                        xAxisThickness={0}
+                        yAxisThickness={0}
+                        yAxisTextStyle={{
+                          color: 'rgba(255,255,255,0.5)',
+                          fontSize: 12,
+                        }}
+                        xAxisLabelTextStyle={{
+                          color: 'rgba(255,255,255,0.5)',
+                          fontSize: 12,
+                        }}
+                        noOfSections={4}
+                        maxValue={
+                          expenseTrendData.length > 0
+                            ? Math.max(
+                                ...expenseTrendData.map((d: any) => d.value),
+                              ) * 1.2
+                            : 0
+                        }
+                        height={180}
+                        width={SCREEN_WIDTH - 80}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                <Animated.View
+                  style={[
+                    styles.advancedBreakdownContainer,
+                    {
+                      opacity: fadeAnim,
+                      transform: [{translateY: slideAnim}],
+                    },
+                  ]}>
+                  {/* Section Header with Stats */}
+                  <View style={styles.breakdownHeader}>
+                    <View>
+                      <Text style={styles.breakdownTitle}>
+                        Expense Analytics
+                      </Text>
+                      <Text style={styles.breakdownSubtitle}>
+                        Detailed category breakdown
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Summary Cards */}
+                  {expenseBreakdown.length > 0 && (
+                    <>
+                      <View style={styles.summaryCards}>
+                        <View style={styles.summaryCard}>
+                          <View style={styles.summaryCardHeader}>
+                            <DollarSign size={20} color="#F4C66A" />
+                            <Text style={styles.summaryCardTitle}>
+                              Total Spent
                             </Text>
-                            <Text style={styles.categoryTransactions}>
-                              {item.transactions} transactions
-                            </Text>
                           </View>
-                        </View>
-                        <View style={styles.categoryHeaderRight}>
-                          {renderCategoryProgress(item)}
-                          <ChevronUp size={20} color="#666" />
-                        </View>
-                      </TouchableOpacity>
-
-                      <Animated.View style={styles.categoryDetails}>
-                        {/* Budget Progress */}
-                        <View style={styles.detailSection}>
-                          <Text style={styles.detailTitle}>
-                            Budget Progress
+                          <Text style={styles.summaryCardValue}>
+                            ${totals.totalSpent.toLocaleString()}
                           </Text>
-                          <View style={styles.budgetProgressContainer}>
-                            <View style={styles.budgetLabels}>
-                              <Text style={styles.budgetLabel}>
-                                Spent: ${item.amount.toLocaleString()}
-                              </Text>
-                              <Text style={styles.budgetLabel}>
-                                Budget: ${item.budget.toLocaleString()}
-                              </Text>
+                          <Text style={styles.summaryCardSubtext}>
+                            of ${totals.totalBudget.toLocaleString()} budget
+                          </Text>
+                        </View>
+
+                        <View style={styles.summaryCard}>
+                          <View style={styles.summaryCardHeader}>
+                            <Target size={20} color="#4ECDC4" />
+                            <Text style={styles.summaryCardTitle}>
+                              Budget Used
+                            </Text>
+                          </View>
+                          <Text style={styles.summaryCardValue}>
+                            {Math.round(totals.budgetUtilization)}%
+                          </Text>
+                          <Text style={styles.summaryCardSubtext}>
+                            ${totals.remainingBudget.toLocaleString()} remaining
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.categoryListTitle}>
+                        Category Breakdown
+                      </Text>
+
+                      <View style={styles.chartContainer}>
+                        {pieChartData.length > 0 ? (
+                          <>
+                            <View style={styles.pieChartWrapper}>
+                              <RNPPieChart
+                                data={pieChartData}
+                                donut
+                                radius={140}
+                                innerRadius={85}
+                                focusOnPress={true}
+                                strokeWidth={0}
+                                innerCircleColor="#1F1D3A"
+                                innerCircleBorderWidth={0}
+                                innerCircleBorderColor="transparent"
+                                showTextBackground={false}
+                                onPress={(item: any, index: number) => {
+                                  const category = expenseBreakdown.find(
+                                    (cat: any) => cat.category === item.label,
+                                  );
+                                  if (category) {
+                                    toggleCategory(category.id);
+                                  }
+                                }}
+                                centerLabelComponent={() => (
+                                  <View style={styles.centerLabel}>
+                                    <Text style={styles.centerLabelTitle}>
+                                      Total
+                                    </Text>
+                                    <Text style={styles.centerLabelValue}>
+                                      ${totals.totalSpent.toLocaleString()}
+                                    </Text>
+                                    <Text style={styles.centerLabelSubtitle}>
+                                      {expenseBreakdown.length} categories
+                                    </Text>
+                                  </View>
+                                )}
+                              />
                             </View>
-                            {/* <View style={styles.progressBarContainer}>
-                              <View style={styles.progressBarBackground}>
-                                <View
-                                  style={[
-                                    styles.progressBarFill,
-                                    {
-                                      width: `${Math.min(progress, 100)}%`,
-                                      backgroundColor: isOverBudget
-                                        ? '#FF6B6B'
-                                        : item.color,
-                                    },
-                                  ]}
-                                />
+
+                            {/* Category List */}
+                            <View style={styles.categoryListContainer}>
+                              <View style={styles.detailedCategoryView}>
+                                {expenseBreakdown.map((item: any) => {
+                                  const IconComponent = item.icon;
+                                  const progress = item.percentage;
+                                  const isOverBudget =
+                                    item.amount > item.budget;
+
+                                  return (
+                                    <TouchableOpacity
+                                      key={item.id}
+                                      style={[
+                                        styles.detailedCategoryCard,
+                                        selectedCategory === item.id &&
+                                          styles.categoryListItemSelected,
+                                      ]}
+                                      onPress={() => toggleCategory(item.id)}
+                                      activeOpacity={0.8}>
+                                      <View style={styles.detailedCardHeader}>
+                                        <View
+                                          style={styles.detailedCategoryLeft}>
+                                          <View
+                                            style={[
+                                              styles.categoryDotLarge,
+                                              {backgroundColor: item.color},
+                                            ]}
+                                          />
+                                          <IconComponent
+                                            size={20}
+                                            color="#fff"
+                                          />
+                                          <Text
+                                            style={styles.detailedCategoryName}>
+                                            {item.category}
+                                          </Text>
+                                        </View>
+                                        <View
+                                          style={styles.detailedCategoryRight}>
+                                          <Text
+                                            style={
+                                              styles.detailedCategoryPercentage
+                                            }>
+                                            {item.breakdownPercentage}%
+                                          </Text>
+                                        </View>
+                                      </View>
+
+                                      <View style={styles.detailedCardBody}>
+                                        <Text
+                                          style={styles.detailedCategoryAmount}>
+                                          ${item.amount.toLocaleString()}
+                                        </Text>
+                                        <View
+                                          style={
+                                            styles.detailedProgressContainer
+                                          }>
+                                          <View
+                                            style={
+                                              styles.detailedProgressBarBackground
+                                            }>
+                                            <View
+                                              style={[
+                                                styles.detailedProgressBarFill,
+                                                {
+                                                  width: `${Math.min(
+                                                    progress,
+                                                    100,
+                                                  )}%`,
+                                                  backgroundColor: isOverBudget
+                                                    ? '#FF6B6B'
+                                                    : item.color,
+                                                },
+                                              ]}
+                                            />
+                                          </View>
+                                          <Text
+                                            style={styles.detailedProgressText}>
+                                            {Math.round(progress)}% of $
+                                            {item.budget.toLocaleString()}
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </TouchableOpacity>
+                                  );
+                                })}
                               </View>
-                              <Text
-                                style={[
-                                  styles.progressText,
-                                  {
-                                    color: isOverBudget
-                                      ? '#FF6B6B'
-                                      : item.color,
-                                  },
-                                ]}>
-                                {Math.round(progress)}%
-                              </Text>
                             </View>
-                            {isOverBudget && (
-                              <Text style={styles.overBudgetWarning}>
-                                ⚠️ Over budget by $
-                                {(item.amount - item.budget).toLocaleString()}
-                              </Text>
-                            )} */}
+                          </>
+                        ) : (
+                          <View style={styles.emptyStateSmall}>
+                            <Text style={styles.emptyStateSmallText}>
+                              No categories with budget set up
+                            </Text>
                           </View>
-                        </View>
+                        )}
+                      </View>
 
-                        {/* Additional Stats */}
-                        <View style={styles.statsGrid}>
-                          <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>
-                              Avg. Transaction
-                            </Text>
-                            <Text style={styles.statValue}>
-                              $
-                              {Math.round(
-                                item.amount / item.transactions,
-                              ).toLocaleString()}
+                      {/* Expanded Category Details */}
+                      {expenseBreakdown
+                        .filter((item: any) => item.expanded)
+                        .map((item: any) => {
+                          const IconComponent = item.icon;
+                          const progress = item.percentage;
+                          const isOverBudget = item.amount > item.budget;
+
+                          return (
+                            <Animated.View
+                              key={item.id}
+                              style={[styles.expandedCategoryCard]}>
+                              <TouchableOpacity
+                                style={styles.categoryCardHeader}
+                                activeOpacity={0.7}>
+                                <View style={styles.categoryHeaderLeft}>
+                                  <View
+                                    style={[
+                                      styles.categoryIconContainer,
+                                      {backgroundColor: `${item.color}20`},
+                                    ]}>
+                                    <IconComponent
+                                      size={20}
+                                      color={item.color}
+                                    />
+                                  </View>
+                                  <View>
+                                    <Text style={styles.categoryName}>
+                                      {item.category}
+                                    </Text>
+                                    <Text style={styles.categoryTransactions}>
+                                      {item.transactions} transactions
+                                    </Text>
+                                  </View>
+                                </View>
+                                <View style={styles.categoryHeaderRight}>
+                                  {renderCategoryProgress(item)}
+                                  <ChevronUp size={20} color="#666" />
+                                </View>
+                              </TouchableOpacity>
+
+                              <Animated.View style={styles.categoryDetails}>
+                                {/* Budget Progress */}
+                                <View style={styles.detailSection}>
+                                  <Text style={styles.detailTitle}>
+                                    Budget Progress
+                                  </Text>
+                                  <View style={styles.budgetProgressContainer}>
+                                    <View style={styles.budgetLabels}>
+                                      <Text style={styles.budgetLabel}>
+                                        Spent: ${item.amount.toLocaleString()}
+                                      </Text>
+                                      <Text style={styles.budgetLabel}>
+                                        Budget: ${item.budget.toLocaleString()}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </View>
+
+                                {/* Additional Stats */}
+                                <View style={styles.statsGrid}>
+                                  <View style={styles.statItem}>
+                                    <Text style={styles.statLabel}>
+                                      Avg. Transaction
+                                    </Text>
+                                    <Text style={styles.statValue}>
+                                      $
+                                      {item.transactions > 0
+                                        ? Math.round(
+                                            item.amount / item.transactions,
+                                          ).toLocaleString()
+                                        : '0'}
+                                    </Text>
+                                  </View>
+                                  <View style={styles.statItem}>
+                                    <Text style={styles.statLabel}>
+                                      Daily Avg.
+                                    </Text>
+                                    <Text style={styles.statValue}>
+                                      $
+                                      {Math.round(
+                                        item.amount / 30,
+                                      ).toLocaleString()}
+                                    </Text>
+                                  </View>
+                                  <View style={styles.statItem}>
+                                    <Text style={styles.statLabel}>Trend</Text>
+                                    <View style={styles.trendValue}>
+                                      {item.trend > 0 ? (
+                                        <ArrowUpRight
+                                          size={16}
+                                          color="#4CD964"
+                                        />
+                                      ) : (
+                                        <ArrowDownRight
+                                          size={16}
+                                          color="#FF3B30"
+                                        />
+                                      )}
+                                      <Text
+                                        style={[
+                                          styles.statValue,
+                                          {
+                                            color:
+                                              item.trend > 0
+                                                ? '#4CD964'
+                                                : '#FF3B30',
+                                          },
+                                        ]}>
+                                        {Math.abs(item.trend)}%
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </View>
+
+                                {/* Action Buttons */}
+                                <View style={styles.actionButtons}>
+                                  <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => {
+                                      _showToast('Coming Soon', 'info');
+                                    }}>
+                                    <Text style={styles.actionButtonText}>
+                                      View Transactions
+                                    </Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.actionButton,
+                                      styles.editButton,
+                                    ]}
+                                    onPress={() => {
+                                      _showToast('Coming Soon', 'info');
+                                    }}>
+                                    <Text style={styles.editButtonText}>
+                                      Adjust Budget
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </Animated.View>
+                            </Animated.View>
+                          );
+                        })}
+
+                      {/* Insights */}
+                      {topCategory && highestTrend && (
+                        <View style={styles.insightsSection}>
+                          <Text style={styles.insightsTitle}>
+                            💡 Spending Insights
+                          </Text>
+                          <View style={styles.insightItem}>
+                            <View
+                              style={[
+                                styles.insightIcon,
+                                {backgroundColor: `${topCategory.color}20`},
+                              ]}>
+                              <TrendingUp size={20} color={topCategory.color} />
+                            </View>
+                            <Text style={styles.insightText}>
+                              Highest spending is on{' '}
+                              <Text
+                                style={{
+                                  color: topCategory.color,
+                                  fontWeight: '600',
+                                }}>
+                                {topCategory.category}
+                              </Text>{' '}
+                              (${topCategory.amount.toLocaleString()})
                             </Text>
                           </View>
-                          <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>Daily Avg.</Text>
-                            <Text style={styles.statValue}>
-                              ${Math.round(item.amount / 30).toLocaleString()}
-                            </Text>
-                          </View>
-                          <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>Trend</Text>
-                            <View style={styles.trendValue}>
-                              {item.trend > 0 ? (
-                                <ArrowUpRight size={16} color="#4CD964" />
+                          <View style={styles.insightItem}>
+                            <View
+                              style={[
+                                styles.insightIcon,
+                                {
+                                  backgroundColor:
+                                    highestTrend.trend > 0
+                                      ? 'rgba(76, 217, 100, 0.1)'
+                                      : 'rgba(255, 59, 48, 0.1)',
+                                },
+                              ]}>
+                              {highestTrend.trend > 0 ? (
+                                <ArrowUpRight size={20} color="#4CD964" />
                               ) : (
-                                <ArrowDownRight size={16} color="#FF3B30" />
+                                <ArrowDownRight size={20} color="#FF3B30" />
                               )}
-                              <Text
-                                style={[
-                                  styles.statValue,
-                                  {
-                                    color:
-                                      item.trend > 0 ? '#4CD964' : '#FF3B30',
-                                  },
-                                ]}>
-                                {Math.abs(item.trend)}%
-                              </Text>
                             </View>
+                            <Text style={styles.insightText}>
+                              <Text
+                                style={{
+                                  color:
+                                    highestTrend.trend > 0
+                                      ? '#4CD964'
+                                      : '#FF3B30',
+                                  fontWeight: '600',
+                                }}>
+                                {highestTrend.category}
+                              </Text>{' '}
+                              is{' '}
+                              {highestTrend.trend > 0
+                                ? 'increasing'
+                                : 'decreasing'}{' '}
+                              by {Math.abs(highestTrend.trend)}%
+                            </Text>
                           </View>
                         </View>
+                      )}
+                    </>
+                  )}
 
-                        {/* Action Buttons */}
-                        <View style={styles.actionButtons}>
-                          <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => {
-                              // Navigate to transactions for this category
-                              console.log(`View ${item.category} transactions`);
-                              // navigation.navigate('Transactions', { category: item.category });
-                            }}>
-                            <Text style={styles.actionButtonText}>
-                              View Transactions
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.actionButton, styles.editButton]}
-                            onPress={() => {
-                              // Open budget adjustment for this category
-                              console.log(`Adjust ${item.category} budget`);
-                              // navigation.navigate('Budget', { category: item.category });
-                            }}>
-                            <Text style={styles.editButtonText}>
-                              Adjust Budget
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </Animated.View>
-                    </Animated.View>
-                  );
-                })}
-
-              {/* Insights */}
-              <View style={styles.insightsSection}>
-                <Text style={styles.insightsTitle}>💡 Spending Insights</Text>
-                <View style={styles.insightItem}>
-                  <View
-                    style={[
-                      styles.insightIcon,
-                      {backgroundColor: `${topCategory.color}20`},
-                    ]}>
-                    <TrendingUp size={20} color={topCategory.color} />
-                  </View>
-                  <Text style={styles.insightText}>
-                    Highest spending is on{' '}
-                    <Text style={{color: topCategory.color, fontWeight: '600'}}>
-                      {topCategory.category}
-                    </Text>{' '}
-                    (${topCategory.amount.toLocaleString()})
-                  </Text>
-                </View>
-                <View style={styles.insightItem}>
-                  <View
-                    style={[
-                      styles.insightIcon,
-                      {
-                        backgroundColor:
-                          highestTrend.trend > 0
-                            ? 'rgba(76, 217, 100, 0.1)'
-                            : 'rgba(255, 59, 48, 0.1)',
-                      },
-                    ]}>
-                    {highestTrend.trend > 0 ? (
-                      <ArrowUpRight size={20} color="#4CD964" />
-                    ) : (
-                      <ArrowDownRight size={20} color="#FF3B30" />
-                    )}
-                  </View>
-                  <Text style={styles.insightText}>
-                    <Text
-                      style={{
-                        color: highestTrend.trend > 0 ? '#4CD964' : '#FF3B30',
-                        fontWeight: '600',
-                      }}>
-                      {highestTrend.category}
-                    </Text>{' '}
-                    is {highestTrend.trend > 0 ? 'increasing' : 'decreasing'} by{' '}
-                    {Math.abs(highestTrend.trend)}%
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
+                  {expenseBreakdown.length === 0 && categories.length > 0 && (
+                    <View style={styles.emptyStateSmall}>
+                      <Text style={styles.emptyStateSmallText}>
+                        Set up category budgets to see breakdown
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.emptyStateButtonSmall}
+                        onPress={() => navigation.navigate('ManageCategories')}>
+                        <Text style={styles.emptyStateButtonText}>
+                          Setup Budgets
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </Animated.View>
+              </>
+            )}
 
             {/* Spacer for bottom navigation */}
             <View style={{height: 100}} />
@@ -893,34 +1252,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 24,
     fontWeight: '700',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statisticsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 24,
-  },
-  statisticsTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  statisticsSubtitle: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-  },
-  notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   periodSelector: {
     flexDirection: 'row',
@@ -959,11 +1290,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  statValue: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
   budgetTitle: {
     color: '#F4C66A',
     fontSize: 16,
@@ -986,7 +1312,6 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#F97316',
     borderRadius: 4,
   },
   budgetStatus: {
@@ -1052,7 +1377,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
   },
-  // Advanced Breakdown Styles
   advancedBreakdownContainer: {
     backgroundColor: '#1F1D3A',
     borderRadius: 24,
@@ -1079,20 +1403,6 @@ const styles = StyleSheet.create({
   breakdownSubtitle: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
-  },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(244, 198, 106, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  toggleButtonText: {
-    color: '#F4C66A',
-    fontSize: 14,
-    fontWeight: '600',
   },
   summaryCards: {
     flexDirection: 'row',
@@ -1125,44 +1435,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 12,
   },
-  visualizationToggle: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
-  },
-  vizButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  vizButtonActive: {
-    backgroundColor: '#F97316',
-  },
-  vizButtonText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  vizButtonTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  chartSection: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 24,
-  },
   pieChartWrapper: {
     alignItems: 'center',
     marginBottom: 24,
   },
-
   centerLabel: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1172,82 +1448,109 @@ const styles = StyleSheet.create({
     color: '#B5B5C3',
     marginBottom: 6,
   },
-
   centerLabelValue: {
     fontSize: 22,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-
   centerLabelSubtitle: {
     fontSize: 13,
     color: '#B5B5C3',
     marginTop: 6,
   },
-  legendContainer: {
-    flex: 1,
-    gap: 8,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  legendItemSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  legendItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  categoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendCategory: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  legendItemRight: {
-    alignItems: 'flex-end',
-  },
-  legendPercentage: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  legendAmount: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-  },
-  categoryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
   categoryListContainer: {
     marginTop: 20,
     width: '100%',
   },
-
-  categoryCardExpanded: {
+  categoryListTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  detailedCategoryView: {
+    gap: 12,
+  },
+  detailedCategoryCard: {
+    backgroundColor: '#2C2C2E',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+  },
+  detailedCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  detailedCategoryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  categoryDotLarge: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  detailedCategoryName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    flexShrink: 1,
+  },
+  detailedCategoryRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailedCategoryPercentage: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    minWidth: 50,
+    textAlign: 'right',
+  },
+  detailedCardBody: {
+    gap: 8,
+  },
+  detailedCategoryAmount: {
+    fontSize: 14,
+    color: '#B5B5C3',
+    marginBottom: 4,
+  },
+  detailedProgressContainer: {
+    gap: 6,
+  },
+  detailedProgressBarBackground: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  detailedProgressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  detailedProgressText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    alignSelf: 'flex-end',
+  },
+  categoryListItemSelected: {
+    backgroundColor: '#3C3C3E',
+    borderWidth: 1,
+    borderColor: '#F4C66A',
+  },
+  expandedCategoryCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   categoryCardHeader: {
@@ -1269,68 +1572,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryListTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    paddingVertical: 8,
-    // marginBottom: 16,
-  },
-
-  categoryList: {
-    gap: 12,
-  },
-  categoryListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#2C2C2E',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  categoryListItemSelected: {
-    backgroundColor: '#3C3C3E',
-    borderWidth: 1,
-    borderColor: '#F4C66A',
-  },
-  categoryListItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1, // 👈 allows text to breathe
-    gap: 10,
-  },
-
-  categoryListName: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    flexShrink: 1, // 👈 prevents pushing right side
-  },
-
-  /* RIGHT */
-  categoryListItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 14,
-  },
-
-  categoryListPercentage: {
-    fontSize: 14,
-    color: '#B5B5C3',
-    width: 48, // 👈 fixed column
-    textAlign: 'right',
-  },
-
-  categoryListAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    width: 90, // 👈 fixed column
-    textAlign: 'right',
-  },
-
   categoryName: {
     color: '#fff',
     fontSize: 16,
@@ -1401,16 +1642,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 12,
   },
-  progressBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  overBudgetWarning: {
-    color: '#FF6B6B',
-    fontSize: 12,
-    marginTop: 4,
-  },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1423,6 +1654,11 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 12,
     marginBottom: 6,
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   trendValue: {
     flexDirection: 'row',
@@ -1488,126 +1724,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
   },
-  categoryListHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyState: {
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    paddingVertical: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    marginTop: 20,
   },
-  detailToggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(244, 198, 106, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-
-  detailToggleText: {
-    color: '#F4C66A',
-    fontSize: 14,
+  emptyStateTitle: {
+    color: '#fff',
+    fontSize: 20,
     fontWeight: '600',
-  },
-  toggleChevron: {
-    transform: [{rotate: '0deg'}],
-    transition: 'transform 0.3s',
-  },
-
-  toggleChevronRotated: {
-    transform: [{rotate: '90deg'}],
-  },
-
-  detailedCategoryView: {
-    gap: 12,
-  },
-
-  detailedCategoryCard: {
-    backgroundColor: '#2C2C2E',
-    borderRadius: 16,
-    padding: 16,
+    marginTop: 16,
     marginBottom: 8,
   },
-
-  detailedCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  emptyStateText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    marginBottom: 20,
   },
-
-  detailedCategoryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
+  emptyStateButton: {
+    backgroundColor: '#F4C66A',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-
-  categoryDotLarge: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-
-  detailedCategoryName: {
+  emptyStateButtonText: {
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
-    flexShrink: 1,
   },
-
-  detailedCategoryRight: {
-    flexDirection: 'row',
+  emptyStateSmall: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
   },
-
-  detailedCategoryPercentage: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    minWidth: 50,
-    textAlign: 'right',
-  },
-
-  detailedCardBody: {
-    gap: 8,
-  },
-
-  detailedCategoryAmount: {
+  emptyStateSmallText: {
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
-    color: '#B5B5C3',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginBottom: 16,
   },
-
-  detailedProgressContainer: {
-    gap: 6,
-  },
-
-  detailedProgressBarBackground: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-
-  detailedProgressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-
-  detailedProgressText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    alignSelf: 'flex-end',
-  },
-
-  expandedCategoryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    marginTop: 12,
-    marginBottom: 12,
-    overflow: 'hidden',
+  emptyStateButtonSmall: {
+    backgroundColor: 'rgba(244, 198, 106, 0.1)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#F4C66A',
   },
 });
