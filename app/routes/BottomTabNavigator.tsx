@@ -1,3 +1,4 @@
+// BottomTabNavigation.tsx
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import React, {FC, useMemo, useState, useEffect} from 'react';
 import {
@@ -9,6 +10,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Keyboard,
 } from 'react-native';
 import {trigger} from 'react-native-haptic-feedback';
 import {Icons} from '../assets/icons';
@@ -59,6 +61,7 @@ const CustomBottomTab: FC<CustomBottomTabProps> = ({
   const styles = useMemo(() => createStyles(AppColors), [AppColors]);
   const [fabScale] = useState(new Animated.Value(1));
   const [fabRotation] = useState(new Animated.Value(0));
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     // Start pulse animation
@@ -85,6 +88,32 @@ const CustomBottomTab: FC<CustomBottomTabProps> = ({
       pulse.stop();
     };
   }, []);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      },
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  // Don't render bottom tab if keyboard is visible
+  if (isKeyboardVisible) {
+    return null;
+  }
 
   const handleFabPress = () => {
     // Scale animation
@@ -159,10 +188,6 @@ const CustomBottomTab: FC<CustomBottomTabProps> = ({
           </View>
         </View>
 
-        {/* <Text style={[styles.textStyle, isSelected && styles.activeTextStyle]}>
-          {item.text}
-        </Text> */}
-
         {isSelected && <View style={styles.activePill} />}
       </TouchableOpacity>
     );
@@ -195,12 +220,9 @@ const CustomBottomTab: FC<CustomBottomTabProps> = ({
               height: '100%',
               width: '100%',
               borderRadius: 100,
-              // borderWidth: 2,
               borderColor: 'rgba(255, 255, 255, 0.2)',
             }}>
-            {/* <View style={styles.iconCenterContainer}> */}
             <Plus size={25} color="#FFFFFF" />
-            {/* </View> */}
           </LinearGradient>
         </Animated.View>
       </TouchableOpacity>
@@ -315,14 +337,11 @@ const createStyles = (AppColors: AppColorTypes) => {
       bottom: 20,
       left: 0,
       right: 0,
-      // paddingHorizontal: 16,
     },
     tabItem: {
       alignItems: 'center',
       justifyContent: 'center',
       flex: 1,
-      // paddingVertical: 8,
-      // position: 'relative',
     },
     iconWrapper: {
       marginBottom: 4,
@@ -373,18 +392,14 @@ const createStyles = (AppColors: AppColorTypes) => {
       elevation: 3,
     },
     fabContainer: {
-      // position: 'absolute',
       top: -25,
       alignSelf: 'center',
-      // zIndex: 20,
     },
     fabOuterGlow: {
       width: 56,
       height: 56,
       borderRadius: 28,
       backgroundColor: 'rgba(249, 115, 22, 0.2)',
-      // alignItems: 'center',
-      // justifyContent: 'center',
       shadowColor: '#F97316',
       shadowOffset: {
         width: 0,

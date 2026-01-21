@@ -37,6 +37,7 @@ import {AppFonts, FontSize} from '../../assets/fonts';
 import {useSelector, useDispatch} from 'react-redux';
 import {RootState} from '../../store';
 import {addCategory, deleteCategory} from '../../store/reducers/userData.slice';
+import {NavigationKeys} from '../../constants/navigationKeys';
 
 // Default category icons
 const defaultIcons = [
@@ -216,13 +217,13 @@ export default function AddCategoryScreen({navigation, route}: any) {
     const isValid = await validateForm();
 
     if (!isValid) {
-      _showToast('Please Enter Detail', 'error');
+      // _showToast('Please Enter Detail', 'error');
       return;
     }
 
     // Check for duplicate category name (case-insensitive)
     if (isCategoryNameExists(newCategory.name)) {
-      _showToast('Category with this name already exists', 'error');
+      // _showToast('Category with this name already exists', 'error');
       return;
     }
 
@@ -236,6 +237,18 @@ export default function AddCategoryScreen({navigation, route}: any) {
     // Dispatch to Redux
     dispatch(addCategory(categoryData));
 
+    // navigation.goBack();
+    setTimeout(() => {
+      if (route.params?.returnToAddExpense) {
+        // Go back to AddExpense with flag
+        navigation.navigate({
+          name: 'AddExpenseScreen',
+          params: {fromAddCategory: true},
+        });
+      } else {
+        navigation.goBack();
+      }
+    }, 100);
     _showToast('Category added successfully', 'success');
 
     // Reset form

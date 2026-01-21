@@ -42,6 +42,7 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import Modal from 'react-native-modal';
 import {RootState} from '../../store';
 import {NavigationKeys} from '../../constants/navigationKeys';
+import {useFocusEffect} from '@react-navigation/native';
 
 interface Category {
   id: string;
@@ -170,23 +171,49 @@ export default function AddExpenseScreen({navigation, route}: any) {
     }
   }, [categories]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Route params:', route.params); // Debug log
+
+      if (route.params?.fromAddCategory && categories.length > 0) {
+        // Coming from AddCategoryScreen: select last category
+        const lastCategory = categories[categories.length - 1];
+        console.log('Selecting last category:', lastCategory.name); // Debug
+
+        setExpense(prev => ({
+          ...prev,
+          category: lastCategory,
+        }));
+
+        // Clear the param
+        navigation.setParams({fromAddCategory: undefined});
+      } else if (categories.length > 0 && !expense.category) {
+        // First load or no category selected yet: select first category
+        console.log('Selecting first category'); // Debug
+        setExpense(prev => ({
+          ...prev,
+          category: categories[0],
+        }));
+      }
+    }, [route.params, categories, expense.category]),
+  );
+
+  // useEffect(() => {
+  //   if (categories.length > 0) {
+  //     // Always select the last category when categories change
+  //     const lastCategory = categories[categories.length - 1];
+  //     setExpense(prev => ({
+  //       ...prev,
+  //       category: lastCategory,
+  //     }));
+  //   }
+  // }, [categories]);
+
   // Function to navigate to Add Category Screen
   const navigateToAddCategory = () => {
-    // navigation.navigate('AddCategoryScreen', {
-    //   categories: categories,
-    //   onSaveCategories: (updatedCategories: Category[]) => {
-    //     // Update categories when coming back
-    //     setCategories(updatedCategories);
-    //     // Auto-select the newly added category (last one)
-    //     if (updatedCategories.length > 0) {
-    //       setExpense(prev => ({
-    //         ...prev,
-    //         category: updatedCategories[updatedCategories.length - 1],
-    //       }));
-    //     }
-    //   },
-    // });
-    navigation.navigate(NavigationKeys.AddCategoryScreen);
+    navigation.navigate(NavigationKeys.AddCategoryScreen, {
+      returnToAddExpense: true, // Simple flag
+    });
   };
 
   // Handle image picker
@@ -280,7 +307,10 @@ export default function AddExpenseScreen({navigation, route}: any) {
     route.params?.onSaveExpense?.(newExpense);
 
     _showToast('Expense added successfully!', 'success');
-    navigation.goBack();
+    navigation.reset({
+      index: 0,
+      routes: [{name: NavigationKeys.BottomTab}], // Or whatever your home screen name is
+    });
   };
 
   return (

@@ -1,4 +1,3 @@
-// screens/FinancialReportScreen.tsx
 import React, {useEffect, useState} from 'react';
 import {
   View,
@@ -9,7 +8,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Switch,
-  // Modal,
   TextInput,
   Alert,
   Platform,
@@ -23,17 +21,13 @@ import {
   DollarSign,
   PiggyBank,
   ChevronLeft,
-  Bell,
   Check,
   Circle,
   Plus,
   Download,
-  Share2,
   Edit2,
   X,
   Calendar,
-  Percent,
-  Wallet,
 } from 'lucide-react-native';
 import {_showToast} from '../../services/UIs/ToastConfig';
 import {useSelector, useDispatch} from 'react-redux';
@@ -49,14 +43,8 @@ import {
 } from '../../store/reducers/goalsSlice';
 import AppModal from '../../components/AppModal';
 import Modal from 'react-native-modal';
-
-interface GoalFormData {
-  name: string;
-  target: string;
-  saved: string;
-  color: string;
-  deadline: string;
-}
+import {Formik} from 'formik';
+import * as Yup from 'yup';
 
 const defaultColors = [
   '#F97316',
@@ -71,6 +59,89 @@ const defaultColors = [
   '#EC4899',
 ];
 
+// Validation Schemas
+export const goalValidationSchema = Yup.object().shape({
+  name: Yup.string()
+    .trim()
+    .required('Goal name is required')
+    .min(2, 'Goal name must be at least 2 characters'),
+  target: Yup.number()
+    .required('Target amount is required')
+    .positive('Target must be greater than 0')
+    .typeError('Please enter a valid number'),
+  saved: Yup.number()
+    .min(0, 'Saved amount cannot be negative')
+    .typeError('Please enter a valid number')
+    .test(
+      'saved-less-than-target',
+      'Saved amount cannot exceed target amount',
+      function (value) {
+        const {target} = this.parent;
+        if (value && target && value > target) {
+          return false;
+        }
+        return true;
+      },
+    ),
+  color: Yup.string().required('Color is required'),
+  deadline: Yup.string().optional(),
+});
+
+export const fundsValidationSchema = Yup.object().shape({
+  amount: Yup.number()
+    .required('Amount is required')
+    .positive('Amount must be greater than 0')
+    .typeError('Please enter a valid number')
+    .test('amount-less-than-remaining', function (value) {
+      // We'll need to pass the remaining amount as context
+      const {remaining} = this.options.context || {};
+      if (remaining && value && value > remaining) {
+        return this.createError({
+          message: `You can only add up to ${formatCurrency(
+            remaining,
+          )} to reach your target`,
+        });
+      }
+      return true;
+    }),
+});
+
+const incomeValidationSchema = Yup.object().shape({
+  income: Yup.number()
+    .required('Income is required')
+    .positive('Income must be greater than 0')
+    .typeError('Please enter a valid number'),
+});
+
+const autoSaveValidationSchema = Yup.object().shape({
+  percentage: Yup.number()
+    .required('Percentage is required')
+    .min(0, 'Percentage cannot be negative')
+    .max(100, 'Percentage cannot exceed 100')
+    .typeError('Please enter a valid percentage'),
+});
+
+// Initial Form Values
+const initialGoalValues = {
+  name: '',
+  target: '',
+  saved: '',
+  color: defaultColors[0],
+  deadline: new Date().toISOString().split('T')[0],
+};
+
+const initialFundsValues = {
+  amount: '',
+};
+
+const initialIncomeValues = {
+  income: '',
+};
+
+const initialAutoSaveValues = {
+  percentage: '',
+};
+
 export default function FinancialReportScreen({navigation}: any) {
   const dispatch = useDispatch();
 
@@ -78,14 +149,9 @@ export default function FinancialReportScreen({navigation}: any) {
   const expenses = useSelector(
     (state: RootState) => state.userData.expenses || [],
   );
-  const categories = useSelector(
-    (state: RootState) => state.userData.categories || [],
-  );
   const monthlyBudget = useSelector(
     (state: RootState) => state.userData.monthlyBudget || 0,
   );
-
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const goals = useSelector((state: RootState) => state.goals.goals);
   const financialSettings = useSelector(
@@ -98,7 +164,7 @@ export default function FinancialReportScreen({navigation}: any) {
     (state: RootState) => state.goals.autoSavePercentage,
   );
 
-  // State for modals and forms
+  // State for modals
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showAddFundsModal, setShowAddFundsModal] = useState<string | null>(
     null,
@@ -114,9 +180,6 @@ export default function FinancialReportScreen({navigation}: any) {
   });
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showAutoSaveModal, setShowAutoSaveModal] = useState(false);
-  const [fundAmount, setFundAmount] = useState('');
-  const [newIncome, setNewIncome] = useState(monthlyIncome.toString());
-  const [newAutoSave, setNewAutoSave] = useState(autoSavePercentage.toString());
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
@@ -124,20 +187,11 @@ export default function FinancialReportScreen({navigation}: any) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
 
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
-  };
-
-  // Goal form state
-  const [goalFormData, setGoalFormData] = useState<GoalFormData>({
-    name: '',
-    target: '',
-    saved: '',
-    color: defaultColors[0],
-    deadline: new Date().toISOString().split('T')[0],
-  });
-
   const [editingGoal, setEditingGoal] = useState<any>(null);
+
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
 
   // Calculate dynamic statistics
   const calculateTotals = () => {
@@ -147,15 +201,11 @@ export default function FinancialReportScreen({navigation}: any) {
     );
     const totalBudget = monthlyBudget || 0;
 
-    // Total saved in goals
     const totalGoalSaved = goals.reduce((sum, goal) => sum + goal.saved, 0);
     const totalGoalTarget = goals.reduce((sum, goal) => sum + goal.target, 0);
 
-    // Monthly savings calculation
     const monthlySavings = monthlyIncome - totalExpense;
     const autoSaveAmount = (monthlyIncome * autoSavePercentage) / 100;
-
-    // Net worth (simplified calculation)
     const netWorth = totalGoalSaved + monthlySavings;
 
     return {
@@ -172,173 +222,114 @@ export default function FinancialReportScreen({navigation}: any) {
 
   const totals = calculateTotals();
 
-  // useEffect(() => {
-  //   if (monthlyIncome === 0 || autoSavePercentage === 0) {
-  //     setShowWelcomeModal(true);
-  //   }
-  // }, []);
-
-  // Calculate goal percentage
   const calculatePercentage = (saved: number, target: number) => {
     if (target === 0) return 0;
     return Math.min(Math.round((saved / target) * 100), 100);
   };
 
-  // Calculate net worth change (simplified - compare with previous month)
-  const calculateNetWorthChange = () => {
-    // In a real app, you would compare with previous month's data
-    // For now, we'll use a random positive change
-    return 12.5; // 12.5% increase
-  };
+  // Handle adding new goal with Formik
+  const handleAddGoal = (values: any, {resetForm}: any) => {
+    const target = parseFloat(values.target);
+    const saved = parseFloat(values.saved) || 0;
 
-  const netWorthChange = calculateNetWorthChange();
-
-  // Handle adding new goal
-  const handleAddGoal = () => {
-    if (!goalFormData.name.trim() || !goalFormData.target) {
-      setValidationModalData({
-        title: 'Missing Information',
-        message: 'Please fill all required fields',
-        type: 'error',
-      });
-      setShowValidationModal(true);
-      return;
-    }
-
-    const target = parseFloat(goalFormData.target);
-    const saved = parseFloat(goalFormData.saved) || 0;
-
-    if (isNaN(target) || target <= 0) {
-      setValidationModalData({
-        title: 'Invalid Target Amount',
-        message: 'Please enter a valid target amount greater than 0',
-        type: 'error',
-      });
-      setShowValidationModal(true);
-      return;
-    }
-
-    if (saved > target) {
-      setValidationModalData({
-        title: 'Amount Limit Exceeded',
-        message: 'Saved amount cannot exceed target amount',
-        type: 'warning',
-      });
-      setShowValidationModal(true);
-      return;
-    }
+    // if (saved > target) {
+    //   setValidationModalData({
+    //     title: 'Amount Limit Exceeded',
+    //     message: 'Saved amount cannot exceed target amount',
+    //     type: 'warning',
+    //   });
+    //   setShowValidationModal(true);
+    //   return;
+    // }
 
     dispatch(
       addGoal({
-        name: goalFormData.name,
+        name: values.name,
         target,
         saved,
-        color: goalFormData.color,
-        deadline: goalFormData.deadline,
+        color: values.color,
+        deadline: values.deadline,
       }),
     );
 
     _showToast('Goal added successfully', 'success');
     setShowGoalModal(false);
-    resetGoalForm();
+    resetForm();
   };
 
-  // Handle editing goal
-  const handleEditGoal = () => {
+  // Handle editing goal with Formik
+  const handleEditGoal = (values: any, {resetForm}: any) => {
     if (!editingGoal) return;
 
-    const target = parseFloat(goalFormData.target);
-    const saved = parseFloat(goalFormData.saved) || 0;
+    const target = parseFloat(values.target);
+    const saved = parseFloat(values.saved) || 0;
 
-    // Validation with better error messages
-    if (!goalFormData.name.trim()) {
-      setValidationModalData({
-        title: 'Validation Error',
-        message: 'Please enter a name for your goal',
-        type: 'error',
-      });
-      setShowValidationModal(true);
-      return;
-    }
-
-    if (isNaN(target) || target <= 0) {
-      setValidationModalData({
-        title: 'Invalid Target Amount',
-        message: 'Please enter a valid target amount greater than 0',
-        type: 'error',
-      });
-      setShowValidationModal(true);
-      return;
-    }
-
-    if (isNaN(saved) || saved < 0) {
-      setValidationModalData({
-        title: 'Invalid Saved Amount',
-        message: 'Please enter a valid saved amount (0 or more)',
-        type: 'error',
-      });
-      setShowValidationModal(true);
-      return;
-    }
-
-    if (saved > target) {
-      setValidationModalData({
-        title: 'Amount Limit Exceeded',
-        message:
-          'Saved amount cannot exceed the target amount. Please adjust your saved amount.',
-        type: 'warning',
-      });
-      setShowValidationModal(true);
-      return;
-    }
+    // if (saved > target) {
+    //   setValidationModalData({
+    //     title: 'Amount Limit Exceeded',
+    //     message:
+    //       'Saved amount cannot exceed the target amount. Please adjust your saved amount.',
+    //     type: 'warning',
+    //   });
+    //   setShowValidationModal(true);
+    //   return;
+    // }
 
     dispatch(
       updateGoal({
         ...editingGoal,
-        name: goalFormData.name,
+        name: values.name,
         target,
         saved,
-        color: goalFormData.color,
-        deadline: goalFormData.deadline,
+        color: values.color,
+        deadline: values.deadline,
       }),
     );
 
     _showToast('Goal updated successfully', 'success');
     setShowEditGoalModal(null);
     setEditingGoal(null);
-    resetGoalForm();
+    resetForm();
   };
 
-  // Handle adding funds to goal
-  const handleAddFunds = (goalId: string) => {
-    const amount = parseFloat(fundAmount);
+  // Handle adding funds with Formik
+  const handleAddFunds = (values: any, {resetForm}: any) => {
+    const amount = parseFloat(values.amount);
 
-    if (isNaN(amount) || amount <= 0) {
-      _showToast('Please enter a valid amount', 'error');
-      return;
-    }
+    // if (editingGoal && editingGoal.saved + amount > editingGoal.target) {
+    //   const remaining = editingGoal.target - editingGoal.saved;
+    //   setValidationModalData({
+    //     title: 'Target Exceeded',
+    //     message: `You can only add up to ${formatCurrency(
+    //       remaining,
+    //     )} to reach your target`,
+    //     type: 'warning',
+    //   });
+    //   setShowValidationModal(true);
+    //   return;
+    // }
 
-    dispatch(addFundsToGoal({goalId, amount}));
+    dispatch(addFundsToGoal({goalId: editingGoal.id, amount}));
     _showToast('Funds added successfully', 'success');
     setShowAddFundsModal(null);
-    setFundAmount('');
+    resetForm();
+  };
+
+  // Handle income update with Formik
+  const handleUpdateIncome = (values: any) => {
+    dispatch(updateMonthlyIncome(parseFloat(values.income)));
+    _showToast('Monthly income updated', 'success');
+    setShowIncomeModal(false);
+  };
+
+  // Handle auto-save update with Formik
+  const handleUpdateAutoSave = (values: any) => {
+    dispatch(updateAutoSavePercentage(parseFloat(values.percentage)));
+    _showToast('Auto-save percentage updated', 'success');
+    setShowAutoSaveModal(false);
   };
 
   // Handle deleting goal
-  const handleDeleteGoal = (goalId: string) => {
-    Alert.alert('Delete Goal', 'Are you sure you want to delete this goal?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          dispatch(deleteGoal(goalId));
-          _showToast('Goal deleted', 'success');
-        },
-      },
-    ]);
-  };
-
   const handleDeletePress = (goalId: string) => {
     setGoalToDelete(goalId);
     setShowDeleteModal(true);
@@ -358,61 +349,15 @@ export default function FinancialReportScreen({navigation}: any) {
     dispatch(updateFinancialSetting({id, enabled: !enabled}));
   };
 
-  // Handle income update
-  const handleUpdateIncome = () => {
-    const income = parseFloat(newIncome);
-    if (isNaN(income) || income <= 0) {
-      _showToast('Please enter a valid income amount', 'error');
-      return;
-    }
-
-    dispatch(updateMonthlyIncome(income));
-    _showToast('Monthly income updated', 'success');
-    setShowIncomeModal(false);
-  };
-
-  // Handle auto-save percentage update
-  const handleUpdateAutoSave = () => {
-    const percentage = parseFloat(newAutoSave);
-    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
-      _showToast('Please enter a valid percentage (0-100)', 'error');
-      return;
-    }
-
-    dispatch(updateAutoSavePercentage(percentage));
-    _showToast('Auto-save percentage updated', 'success');
-    setShowAutoSaveModal(false);
-  };
-
-  // Reset goal form
-  const resetGoalForm = () => {
-    setGoalFormData({
-      name: '',
-      target: '',
-      saved: '0',
-      color: defaultColors[0],
-      deadline: new Date().toISOString().split('T')[0],
-    });
-    setEditingGoal(null);
-  };
-
   // Open edit goal modal
   const openEditGoalModal = (goal: any) => {
     setEditingGoal(goal);
-    setGoalFormData({
-      name: goal.name,
-      target: goal.target.toString(),
-      saved: goal.saved.toString(),
-      color: goal.color,
-      deadline: goal.deadline || new Date().toISOString().split('T')[0],
-    });
     setShowEditGoalModal(goal.id);
   };
 
   // Open add funds modal
   const openAddFundsModal = (goal: any) => {
     setEditingGoal(goal);
-    setFundAmount('');
     setShowAddFundsModal(goal.id);
   };
 
@@ -428,10 +373,10 @@ export default function FinancialReportScreen({navigation}: any) {
 
   // Get goal progress color
   const getGoalProgressColor = (percentage: number) => {
-    if (percentage >= 100) return '#10B981'; // Green
-    if (percentage >= 75) return '#F4C66A'; // Yellow
-    if (percentage >= 50) return '#F97316'; // Orange
-    return '#FF6B6B'; // Red
+    if (percentage >= 100) return '#10B981';
+    if (percentage >= 75) return '#F4C66A';
+    if (percentage >= 50) return '#F97316';
+    return '#FF6B6B';
   };
 
   return (
@@ -466,14 +411,6 @@ export default function FinancialReportScreen({navigation}: any) {
               <Text style={styles.profitAmount}>
                 {formatCurrency(totals.netWorth)}
               </Text>
-              {/* <Text
-                style={[
-                  styles.profitChange,
-                  {color: netWorthChange >= 0 ? '#86EFAC' : '#FF6B6B'},
-                ]}>
-                {netWorthChange >= 0 ? '+' : ''}
-                {netWorthChange}% from last month
-              </Text> */}
             </View>
 
             {/* Monthly Overview */}
@@ -598,11 +535,11 @@ export default function FinancialReportScreen({navigation}: any) {
                             ]}>
                             {percentage}%
                           </Text>
-                          <TouchableOpacity
+                          {/* <TouchableOpacity
                             style={styles.smallActionButton}
                             onPress={() => openEditGoalModal(goal)}>
                             <Edit2 size={16} color="#F4C66A" />
-                          </TouchableOpacity>
+                          </TouchableOpacity> */}
                         </View>
                       </View>
 
@@ -628,14 +565,9 @@ export default function FinancialReportScreen({navigation}: any) {
                       <View style={styles.goalActions}>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => openAddFundsModal(goal)}>
-                          <Text style={styles.actionButtonText}>Add Funds</Text>
-                        </TouchableOpacity>
-                        {/* <TouchableOpacity
-                          style={[styles.actionButton, styles.editButton]}
                           onPress={() => openEditGoalModal(goal)}>
-                          <Text style={styles.editButtonText}>Edit</Text>
-                        </TouchableOpacity> */}
+                          <Text style={styles.actionButtonText}>Edit</Text>
+                        </TouchableOpacity>
                         <TouchableOpacity
                           style={[styles.actionButton, styles.deleteButton]}
                           onPress={() => handleDeletePress(goal.id)}>
@@ -678,13 +610,12 @@ export default function FinancialReportScreen({navigation}: any) {
             </View>
           </ScrollView>
 
-          {/* Add Goal Modal */}
+          {/* Add Goal Modal with Formik */}
           <Modal
             isVisible={showGoalModal}
             avoidKeyboard={true}
             onModalHide={() => {
               setShowGoalModal(false);
-              resetGoalForm();
               setShowDatePicker(false);
             }}>
             <View style={styles.modalOverlay}>
@@ -694,227 +625,227 @@ export default function FinancialReportScreen({navigation}: any) {
                   <TouchableOpacity
                     onPress={() => {
                       setShowGoalModal(false);
-                      resetGoalForm();
                     }}>
                     <X size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.modalForm}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Goal Name</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      value={goalFormData.name}
-                      onChangeText={text =>
-                        setGoalFormData({...goalFormData, name: text})
-                      }
-                      placeholder="e.g., New Car"
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    />
-                  </View>
-
-                  <View style={styles.inputRow}>
-                    <View style={[styles.inputContainer, {flex: 1}]}>
-                      <Text style={styles.inputLabel}>Target Amount</Text>
-                      <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>$</Text>
-                        <TextInput
-                          style={[styles.textInput, {flex: 1}]}
-                          value={goalFormData.target}
-                          onChangeText={text =>
-                            setGoalFormData({...goalFormData, target: text})
-                          }
-                          placeholder="0"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          keyboardType="decimal-pad"
-                          returnKeyType="done"
-                          enablesReturnKeyAutomatically={true}
-                          maxLength={6}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={[styles.inputContainer, {flex: 1}]}>
-                      <Text style={styles.inputLabel}>Already Saved</Text>
-                      <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>$</Text>
-                        <TextInput
-                          style={[styles.textInput, {flex: 1}]}
-                          value={goalFormData.saved}
-                          onChangeText={text =>
-                            setGoalFormData({...goalFormData, saved: text})
-                          }
-                          placeholder="0"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          keyboardType="decimal-pad"
-                          returnKeyType="done"
-                          enablesReturnKeyAutomatically={true}
-                          maxLength={6}
-                        />
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Inside Add Goal Modal - Replace the existing Target Date section */}
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>
-                      Target Date (Optional)
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => setShowDatePicker(true)}
-                      style={styles.datePickerButton}
-                      activeOpacity={0.7}>
-                      <View style={styles.datePickerContent}>
-                        <Calendar size={20} color="rgba(255, 255, 255, 0.7)" />
-                        <Text
-                          style={[
-                            styles.dateText,
-                            !goalFormData.deadline && styles.placeholderText,
-                          ]}>
-                          {goalFormData.deadline || 'Select Date'}
-                        </Text>
-                      </View>
-                      <ChevronLeft
-                        size={20}
-                        color="rgba(255, 255, 255, 0.5)"
-                        style={styles.calendarChevron}
-                      />
-                    </TouchableOpacity>
-
-                    <DatePicker
-                      modal
-                      open={showDatePicker}
-                      date={
-                        goalFormData.deadline
-                          ? new Date(goalFormData.deadline)
-                          : new Date()
-                      }
-                      mode="date"
-                      onConfirm={date => {
-                        setShowDatePicker(false);
-                        setGoalFormData({
-                          ...goalFormData,
-                          deadline: formatDate(date),
-                        });
-                      }}
-                      onCancel={() => {
-                        setShowDatePicker(false);
-                      }}
-                      theme={Platform.OS === 'ios' ? 'light' : 'dark'}
-                      confirmText="Select"
-                      cancelText="Cancel"
-                      title="Select Target Date"
-                      minimumDate={new Date()} // Optional: Disable past dates
-                      maximumDate={new Date(2100, 0, 1)} // Optional: Set max date
-                      androidVariant="nativeAndroid"
-                    />
-                  </View>
-
-                  {/* <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Select Color</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.colorPicker}>
-                      {defaultColors.map(color => (
-                        <TouchableOpacity
-                          key={color}
-                          style={[
-                            styles.colorOption,
-                            {backgroundColor: color},
-                            goalFormData.color === color &&
-                              styles.colorOptionSelected,
-                          ]}
-                          onPress={() =>
-                            setGoalFormData({...goalFormData, color})
-                          }>
-                          {goalFormData.color === color && (
-                            <Check size={16} color="#fff" />
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View> */}
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Select Color</Text>
-
-                    <View style={styles.colorPickerContainer}>
-                      {/* Left fade gradient */}
-                      <LinearGradient
-                        colors={['#1F1D3A', 'transparent']}
-                        start={{x: 0, y: 0}}
-                        end={{x: 1, y: 0}}
-                        style={styles.leftFade}
-                        pointerEvents="none"
-                      />
-
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.colorPicker}
-                        contentContainerStyle={styles.colorPickerContent}>
-                        {defaultColors.map(color => (
-                          <TouchableOpacity
-                            key={color}
+                <Formik
+                  initialValues={initialGoalValues}
+                  validationSchema={goalValidationSchema}
+                  onSubmit={handleAddGoal}>
+                  {({
+                    values,
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    setFieldValue,
+                    errors,
+                    touched,
+                  }) => (
+                    <>
+                      <ScrollView style={styles.modalForm}>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputLabel}>Goal Name</Text>
+                          <TextInput
                             style={[
-                              styles.colorOption,
-                              {backgroundColor: color},
-                              goalFormData.color === color &&
-                                styles.colorOptionSelected,
+                              styles.textInput,
+                              errors.name && touched.name && styles.inputError,
                             ]}
-                            onPress={() =>
-                              setGoalFormData({...goalFormData, color})
-                            }>
-                            {goalFormData.color === color && (
-                              <Check size={16} color="#fff" />
+                            value={values.name}
+                            onChangeText={handleChange('name')}
+                            onBlur={handleBlur('name')}
+                            placeholder="e.g., New Car"
+                            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                          />
+                          {errors.name && touched.name && (
+                            <Text style={styles.errorText}>{errors.name}</Text>
+                          )}
+                        </View>
+
+                        <View style={styles.inputRow}>
+                          <View style={[styles.inputContainer, {flex: 1}]}>
+                            <Text style={styles.inputLabel}>Target Amount</Text>
+                            <View
+                              style={[
+                                styles.amountInput,
+                                errors.target &&
+                                  touched.target &&
+                                  styles.inputErrorBorder,
+                              ]}>
+                              <Text style={styles.currencySymbol}>$</Text>
+                              <TextInput
+                                style={[styles.textInput, {flex: 1}]}
+                                value={values.target}
+                                onChangeText={handleChange('target')}
+                                onBlur={handleBlur('target')}
+                                placeholder="0"
+                                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                keyboardType="decimal-pad"
+                                maxLength={6}
+                                returnKeyType="done"
+                                enablesReturnKeyAutomatically={true}
+                              />
+                            </View>
+                            {errors.target && touched.target && (
+                              <Text style={styles.errorText}>
+                                {errors.target}
+                              </Text>
                             )}
+                          </View>
+
+                          <View style={[styles.inputContainer, {flex: 1}]}>
+                            <Text style={styles.inputLabel}>Already Saved</Text>
+                            <View
+                              style={[
+                                styles.amountInput,
+                                errors.saved &&
+                                  touched.saved &&
+                                  styles.inputErrorBorder,
+                              ]}>
+                              <Text style={styles.currencySymbol}>$</Text>
+                              <TextInput
+                                style={[styles.textInput, {flex: 1}]}
+                                value={values.saved}
+                                onChangeText={handleChange('saved')}
+                                onBlur={handleBlur('saved')}
+                                placeholder="0"
+                                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                keyboardType="decimal-pad"
+                                maxLength={6}
+                                returnKeyType="done"
+                                enablesReturnKeyAutomatically={true}
+                              />
+                            </View>
+                            {errors.saved && touched.saved && (
+                              <Text style={styles.errorText}>
+                                {errors.saved}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputLabel}>
+                            Target Date (Optional)
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setShowDatePicker(true)}
+                            style={styles.datePickerButton}
+                            activeOpacity={0.7}>
+                            <View style={styles.datePickerContent}>
+                              <Calendar
+                                size={20}
+                                color="rgba(255, 255, 255, 0.7)"
+                              />
+                              <Text style={styles.dateText}>
+                                {values.deadline || 'Select Date'}
+                              </Text>
+                            </View>
+                            <ChevronLeft
+                              size={20}
+                              color="rgba(255, 255, 255, 0.5)"
+                              style={styles.calendarChevron}
+                            />
                           </TouchableOpacity>
-                        ))}
+
+                          <DatePicker
+                            modal
+                            open={showDatePicker}
+                            date={
+                              values.deadline
+                                ? new Date(values.deadline)
+                                : new Date()
+                            }
+                            mode="date"
+                            onConfirm={date => {
+                              setShowDatePicker(false);
+                              setFieldValue('deadline', formatDate(date));
+                            }}
+                            onCancel={() => {
+                              setShowDatePicker(false);
+                            }}
+                            theme={Platform.OS === 'ios' ? 'light' : 'dark'}
+                            confirmText="Select"
+                            cancelText="Cancel"
+                            title="Select Target Date"
+                            minimumDate={new Date()}
+                            maximumDate={new Date(2100, 0, 1)}
+                            androidVariant="nativeAndroid"
+                          />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputLabel}>Select Color</Text>
+                          <View style={styles.colorPickerContainer}>
+                            <LinearGradient
+                              colors={['#1F1D3A', 'transparent']}
+                              start={{x: 0, y: 0}}
+                              end={{x: 1, y: 0}}
+                              style={styles.leftFade}
+                              pointerEvents="none"
+                            />
+                            <ScrollView
+                              horizontal
+                              showsHorizontalScrollIndicator={false}
+                              style={styles.colorPicker}
+                              contentContainerStyle={styles.colorPickerContent}>
+                              {defaultColors.map(color => (
+                                <TouchableOpacity
+                                  key={color}
+                                  style={[
+                                    styles.colorOption,
+                                    {backgroundColor: color},
+                                    values.color === color &&
+                                      styles.colorOptionSelected,
+                                  ]}
+                                  onPress={() => setFieldValue('color', color)}>
+                                  {values.color === color && (
+                                    <Check size={16} color="#fff" />
+                                  )}
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                            <LinearGradient
+                              colors={['transparent', '#1F1D3A']}
+                              start={{x: 0, y: 0}}
+                              end={{x: 1, y: 0}}
+                              style={styles.rightFade}
+                              pointerEvents="none"
+                            />
+                          </View>
+                          <Text style={styles.scrollHintText}>
+                            Swipe to see more colors
+                          </Text>
+                        </View>
                       </ScrollView>
 
-                      <LinearGradient
-                        colors={['transparent', '#1F1D3A']}
-                        start={{x: 0, y: 0}}
-                        end={{x: 1, y: 0}}
-                        style={styles.rightFade}
-                        pointerEvents="none"
-                      />
-                    </View>
-
-                    {/* Scroll hint text */}
-                    <Text style={styles.scrollHintText}>
-                      Swipe to see more colors
-                    </Text>
-                  </View>
-                </ScrollView>
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => {
-                      setShowGoalModal(false);
-                      resetGoalForm();
-                    }}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleAddGoal}>
-                    <Text style={styles.confirmButtonText}>Add Goal</Text>
-                  </TouchableOpacity>
-                </View>
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.cancelButton]}
+                          onPress={() => setShowGoalModal(false)}>
+                          <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.confirmButton]}
+                          onPress={handleSubmit}>
+                          <Text style={styles.confirmButtonText}>Add Goal</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </Formik>
               </View>
             </View>
           </Modal>
 
-          {/* Edit Goal Modal */}
+          {/* Edit Goal Modal with Formik */}
           <Modal
             isVisible={!!showEditGoalModal}
             avoidKeyboard={true}
             onModalHide={() => {
               setShowEditGoalModal(null);
-              resetGoalForm();
+              setEditingGoal(null);
               setShowEditDatePicker(false);
             }}>
             <View style={styles.modalOverlay}>
@@ -924,201 +855,254 @@ export default function FinancialReportScreen({navigation}: any) {
                   <TouchableOpacity
                     onPress={() => {
                       setShowEditGoalModal(null);
-                      resetGoalForm();
+                      setEditingGoal(null);
                     }}>
                     <X size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.modalForm}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Goal Name</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      value={goalFormData.name}
-                      onChangeText={text =>
-                        setGoalFormData({...goalFormData, name: text})
-                      }
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    />
-                  </View>
-
-                  <View style={styles.inputRow}>
-                    <View style={[styles.inputContainer, {flex: 1}]}>
-                      <Text style={styles.inputLabel}>Target Amount</Text>
-                      <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>$</Text>
-                        <TextInput
-                          style={[styles.textInput, {flex: 1}]}
-                          value={goalFormData.target}
-                          onChangeText={text =>
-                            setGoalFormData({...goalFormData, target: text})
-                          }
-                          keyboardType="decimal-pad"
-                          returnKeyType="done"
-                          enablesReturnKeyAutomatically={true}
-                          maxLength={6}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={[styles.inputContainer, {flex: 1}]}>
-                      <Text style={styles.inputLabel}>Already Saved</Text>
-                      <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>$</Text>
-                        <TextInput
-                          style={[styles.textInput, {flex: 1}]}
-                          value={goalFormData.saved}
-                          onChangeText={text =>
-                            setGoalFormData({...goalFormData, saved: text})
-                          }
-                          keyboardType="decimal-pad"
-                          returnKeyType="done"
-                          enablesReturnKeyAutomatically={true}
-                          maxLength={6}
-                        />
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Inside Edit Goal Modal - Replace the existing Target Date section */}
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>
-                      Target Date (Optional)
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => setShowEditDatePicker(true)}
-                      style={styles.datePickerButton}
-                      activeOpacity={0.7}>
-                      <View style={styles.datePickerContent}>
-                        <Calendar size={20} color="rgba(255, 255, 255, 0.7)" />
-                        <Text
-                          style={[
-                            styles.dateText,
-                            !goalFormData.deadline && styles.placeholderText,
-                          ]}>
-                          {goalFormData.deadline || 'Select Date'}
-                        </Text>
-                      </View>
-                      <ChevronLeft
-                        size={20}
-                        color="rgba(255, 255, 255, 0.5)"
-                        style={styles.calendarChevron}
-                      />
-                    </TouchableOpacity>
-
-                    <DatePicker
-                      modal
-                      open={showEditDatePicker}
-                      date={
-                        goalFormData.deadline
-                          ? new Date(goalFormData.deadline)
-                          : new Date()
-                      }
-                      mode="date"
-                      onConfirm={date => {
-                        setShowEditDatePicker(false);
-                        setGoalFormData({
-                          ...goalFormData,
-                          deadline: formatDate(date),
-                        });
-                      }}
-                      onCancel={() => {
-                        setShowEditDatePicker(false);
-                      }}
-                      theme={Platform.OS === 'ios' ? 'light' : 'dark'}
-                      confirmText="Select"
-                      cancelText="Cancel"
-                      title="Select Target Date"
-                      minimumDate={new Date()}
-                      maximumDate={new Date(2100, 0, 1)}
-                      androidVariant="nativeAndroid"
-                    />
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Select Color</Text>
-
-                    <View style={styles.colorPickerContainer}>
-                      {/* Left fade gradient */}
-                      <LinearGradient
-                        colors={['#1F1D3A', 'transparent']}
-                        start={{x: 0, y: 0}}
-                        end={{x: 1, y: 0}}
-                        style={styles.leftFade}
-                        pointerEvents="none"
-                      />
-
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.colorPicker}
-                        contentContainerStyle={styles.colorPickerContent}>
-                        {defaultColors.map(color => (
-                          <TouchableOpacity
-                            key={color}
-                            style={[
-                              styles.colorOption,
-                              {backgroundColor: color},
-                              goalFormData.color === color &&
-                                styles.colorOptionSelected,
-                            ]}
-                            onPress={() =>
-                              setGoalFormData({...goalFormData, color})
-                            }>
-                            {goalFormData.color === color && (
-                              <Check size={16} color="#fff" />
+                {editingGoal && (
+                  <Formik
+                    initialValues={{
+                      name: editingGoal.name,
+                      target: editingGoal.target.toString(),
+                      saved: editingGoal.saved.toString(),
+                      color: editingGoal.color,
+                      deadline:
+                        editingGoal.deadline ||
+                        new Date().toISOString().split('T')[0],
+                    }}
+                    validationSchema={goalValidationSchema}
+                    onSubmit={handleEditGoal}>
+                    {({
+                      values,
+                      handleChange,
+                      handleBlur,
+                      handleSubmit,
+                      setFieldValue,
+                      errors,
+                      touched,
+                    }) => (
+                      <>
+                        <ScrollView style={styles.modalForm}>
+                          <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Goal Name</Text>
+                            <TextInput
+                              style={[
+                                styles.textInput,
+                                errors.name &&
+                                  touched.name &&
+                                  styles.inputError,
+                              ]}
+                              value={values.name}
+                              onChangeText={handleChange('name')}
+                              onBlur={handleBlur('name')}
+                              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                            />
+                            {errors.name && touched.name && (
+                              <Text style={styles.errorText}>
+                                {errors.name}
+                              </Text>
                             )}
+                          </View>
+
+                          <View style={styles.inputRow}>
+                            <View style={[styles.inputContainer, {flex: 1}]}>
+                              <Text style={styles.inputLabel}>
+                                Target Amount
+                              </Text>
+                              <View
+                                style={[
+                                  styles.amountInput,
+                                  errors.target &&
+                                    touched.target &&
+                                    styles.inputErrorBorder,
+                                ]}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                  style={[styles.textInput, {flex: 1}]}
+                                  value={values.target}
+                                  onChangeText={handleChange('target')}
+                                  onBlur={handleBlur('target')}
+                                  keyboardType="decimal-pad"
+                                  maxLength={6}
+                                  returnKeyType="done"
+                                  enablesReturnKeyAutomatically={true}
+                                />
+                              </View>
+                              {errors.target && touched.target && (
+                                <Text style={styles.errorText}>
+                                  {errors.target}
+                                </Text>
+                              )}
+                            </View>
+
+                            <View style={[styles.inputContainer, {flex: 1}]}>
+                              <Text style={styles.inputLabel}>
+                                Already Saved
+                              </Text>
+                              <View
+                                style={[
+                                  styles.amountInput,
+                                  errors.saved &&
+                                    touched.saved &&
+                                    styles.inputErrorBorder,
+                                ]}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                  style={[styles.textInput, {flex: 1}]}
+                                  value={values.saved}
+                                  onChangeText={handleChange('saved')}
+                                  onBlur={handleBlur('saved')}
+                                  keyboardType="decimal-pad"
+                                  maxLength={6}
+                                  returnKeyType="done"
+                                  enablesReturnKeyAutomatically={true}
+                                />
+                              </View>
+                              {errors.saved && touched.saved && (
+                                <Text style={styles.errorText}>
+                                  {errors.saved}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+
+                          <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>
+                              Target Date (Optional)
+                            </Text>
+                            <TouchableOpacity
+                              onPress={() => setShowEditDatePicker(true)}
+                              style={styles.datePickerButton}
+                              activeOpacity={0.7}>
+                              <View style={styles.datePickerContent}>
+                                <Calendar
+                                  size={20}
+                                  color="rgba(255, 255, 255, 0.7)"
+                                />
+                                <Text style={styles.dateText}>
+                                  {values.deadline || 'Select Date'}
+                                </Text>
+                              </View>
+                              <ChevronLeft
+                                size={20}
+                                color="rgba(255, 255, 255, 0.5)"
+                                style={styles.calendarChevron}
+                              />
+                            </TouchableOpacity>
+
+                            <DatePicker
+                              modal
+                              open={showEditDatePicker}
+                              date={
+                                values.deadline
+                                  ? new Date(values.deadline)
+                                  : new Date()
+                              }
+                              mode="date"
+                              onConfirm={date => {
+                                setShowEditDatePicker(false);
+                                setFieldValue('deadline', formatDate(date));
+                              }}
+                              onCancel={() => {
+                                setShowEditDatePicker(false);
+                              }}
+                              theme={Platform.OS === 'ios' ? 'light' : 'dark'}
+                              confirmText="Select"
+                              cancelText="Cancel"
+                              title="Select Target Date"
+                              minimumDate={new Date()}
+                              maximumDate={new Date(2100, 0, 1)}
+                              androidVariant="nativeAndroid"
+                            />
+                          </View>
+
+                          <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Select Color</Text>
+                            <View style={styles.colorPickerContainer}>
+                              <LinearGradient
+                                colors={['#1F1D3A', 'transparent']}
+                                start={{x: 0, y: 0}}
+                                end={{x: 1, y: 0}}
+                                style={styles.leftFade}
+                                pointerEvents="none"
+                              />
+                              <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.colorPicker}
+                                contentContainerStyle={
+                                  styles.colorPickerContent
+                                }>
+                                {defaultColors.map(color => (
+                                  <TouchableOpacity
+                                    key={color}
+                                    style={[
+                                      styles.colorOption,
+                                      {backgroundColor: color},
+                                      values.color === color &&
+                                        styles.colorOptionSelected,
+                                    ]}
+                                    onPress={() =>
+                                      setFieldValue('color', color)
+                                    }>
+                                    {values.color === color && (
+                                      <Check size={16} color="#fff" />
+                                    )}
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+                              <LinearGradient
+                                colors={['transparent', '#1F1D3A']}
+                                start={{x: 0, y: 0}}
+                                end={{x: 1, y: 0}}
+                                style={styles.rightFade}
+                                pointerEvents="none"
+                              />
+                            </View>
+                            <Text style={styles.scrollHintText}>
+                              Swipe to see more colors
+                            </Text>
+                          </View>
+                        </ScrollView>
+
+                        <View style={styles.modalActions}>
+                          <TouchableOpacity
+                            style={[styles.modalButton, styles.deleteButton]}
+                            onPress={() => {
+                              if (editingGoal) {
+                                handleDeletePress(editingGoal.id);
+                                setShowEditGoalModal(null);
+                              }
+                            }}>
+                            <Text style={styles.deleteButtonText}>
+                              Delete Goal
+                            </Text>
                           </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-
-                      {/* Right fade gradient */}
-                      <LinearGradient
-                        colors={['transparent', '#1F1D3A']}
-                        start={{x: 0, y: 0}}
-                        end={{x: 1, y: 0}}
-                        style={styles.rightFade}
-                        pointerEvents="none"
-                      />
-                    </View>
-
-                    {/* Scroll hint text */}
-                    <Text style={styles.scrollHintText}>
-                      Swipe to see more colors
-                    </Text>
-                  </View>
-                </ScrollView>
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.deleteButton]}
-                    onPress={() => {
-                      if (editingGoal) {
-                        // handleDeleteGoal(editingGoal.id);
-                        handleDeletePress(editingGoal.id);
-                        setShowEditGoalModal(null);
-                      }
-                    }}>
-                    <Text style={styles.deleteButtonText}>Delete Goal</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleEditGoal}>
-                    <Text style={styles.confirmButtonText}>Save Changes</Text>
-                  </TouchableOpacity>
-                </View>
+                          <TouchableOpacity
+                            style={[styles.modalButton, styles.confirmButton]}
+                            onPress={handleSubmit}>
+                            <Text style={styles.confirmButtonText}>
+                              Save Changes
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </Formik>
+                )}
               </View>
             </View>
           </Modal>
 
-          {/* Add Funds Modal */}
+          {/* Add Funds Modal with Formik */}
           <Modal
             isVisible={!!showAddFundsModal}
             avoidKeyboard={true}
             onModalHide={() => {
               setShowAddFundsModal(null);
-              setFundAmount('');
+              setEditingGoal(null);
             }}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
@@ -1127,73 +1111,107 @@ export default function FinancialReportScreen({navigation}: any) {
                   <TouchableOpacity
                     onPress={() => {
                       setShowAddFundsModal(null);
-                      setFundAmount('');
+                      setEditingGoal(null);
                     }}>
                     <X size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
                 {editingGoal && (
-                  <View style={styles.modalForm}>
-                    <Text style={styles.goalSummary}>
-                      Adding to:{' '}
-                      <Text
-                        style={{color: editingGoal.color, fontWeight: '600'}}>
-                        {editingGoal.name}
-                      </Text>
-                    </Text>
-                    <Text style={styles.goalSummary}>
-                      Current: {formatCurrency(editingGoal.saved)} /{' '}
-                      {formatCurrency(editingGoal.target)}
-                    </Text>
-
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Amount to Add</Text>
-                      <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>$</Text>
-                        <TextInput
-                          style={[styles.textInput, {flex: 1}]}
-                          value={fundAmount}
-                          onChangeText={setFundAmount}
-                          placeholder="0"
-                          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                          keyboardType="decimal-pad"
-                          returnKeyType="done"
-                          enablesReturnKeyAutomatically={true}
-                          maxLength={6}
-                        />
-                      </View>
-                    </View>
-
-                    <Text style={styles.noteText}>
-                      Note: You cannot add more than the remaining target
-                      amount.
-                    </Text>
-                  </View>
-                )}
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => {
-                      setShowAddFundsModal(null);
-                      setFundAmount('');
+                  <Formik
+                    initialValues={initialFundsValues}
+                    validationSchema={fundsValidationSchema}
+                    onSubmit={handleAddFunds}
+                    validateOnMount={false}
+                    context={{
+                      remaining: editingGoal
+                        ? editingGoal.target - editingGoal.saved
+                        : 0,
                     }}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={() =>
-                      editingGoal && handleAddFunds(editingGoal.id)
-                    }>
-                    <Text style={styles.confirmButtonText}>Add Funds</Text>
-                  </TouchableOpacity>
-                </View>
+                    {({
+                      values,
+                      handleChange,
+                      handleBlur,
+                      handleSubmit,
+                      errors,
+                      touched,
+                    }) => (
+                      <>
+                        <View style={styles.modalForm}>
+                          <Text style={styles.goalSummary}>
+                            Adding to:{' '}
+                            <Text
+                              style={{
+                                color: editingGoal.color,
+                                fontWeight: '600',
+                              }}>
+                              {editingGoal.name}
+                            </Text>
+                          </Text>
+                          <Text style={styles.goalSummary}>
+                            Current: {formatCurrency(editingGoal.saved)} /{' '}
+                            {formatCurrency(editingGoal.target)}
+                          </Text>
+
+                          <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Amount to Add</Text>
+                            <View
+                              style={[
+                                styles.amountInput,
+                                errors.amount &&
+                                  touched.amount &&
+                                  styles.inputErrorBorder,
+                              ]}>
+                              <Text style={styles.currencySymbol}>$</Text>
+                              <TextInput
+                                style={[styles.textInput, {flex: 1}]}
+                                value={values.amount}
+                                onChangeText={handleChange('amount')}
+                                onBlur={handleBlur('amount')}
+                                placeholder="0"
+                                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                keyboardType="decimal-pad"
+                                maxLength={6}
+                                returnKeyType="done"
+                                enablesReturnKeyAutomatically={true}
+                              />
+                            </View>
+                            {errors.amount && touched.amount && (
+                              <Text style={styles.errorText}>
+                                {errors.amount}
+                              </Text>
+                            )}
+                          </View>
+
+                          <Text style={styles.noteText}>
+                            Note: You cannot add more than the remaining target
+                            amount.
+                          </Text>
+                        </View>
+
+                        <View style={styles.modalActions}>
+                          <TouchableOpacity
+                            style={[styles.modalButton, styles.cancelButton]}
+                            onPress={() => setShowAddFundsModal(null)}>
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.modalButton, styles.confirmButton]}
+                            onPress={handleSubmit}>
+                            <Text style={styles.confirmButtonText}>
+                              Add Funds
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </Formik>
+                )}
               </View>
             </View>
           </Modal>
 
-          {/* Income Edit Modal */}
+          {/* Income Edit Modal with Formik */}
           <Modal
             isVisible={showIncomeModal}
             avoidKeyboard={true}
@@ -1207,43 +1225,73 @@ export default function FinancialReportScreen({navigation}: any) {
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.modalForm}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Monthly Income</Text>
-                    <View style={styles.amountInput}>
-                      <Text style={styles.currencySymbol}>$</Text>
-                      <TextInput
-                        style={[styles.textInput, {flex: 1}]}
-                        value={newIncome}
-                        onChangeText={setNewIncome}
-                        placeholder="0"
-                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                        keyboardType="decimal-pad"
-                        maxLength={6}
-                        returnKeyType="done"
-                        enablesReturnKeyAutomatically={true}
-                      />
-                    </View>
-                  </View>
-                </View>
+                <Formik
+                  initialValues={{income: monthlyIncome.toString()}}
+                  validationSchema={incomeValidationSchema}
+                  onSubmit={handleUpdateIncome}>
+                  {({
+                    values,
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    errors,
+                    touched,
+                  }) => (
+                    <>
+                      <View style={styles.modalForm}>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputLabel}>Monthly Income</Text>
+                          <View
+                            style={[
+                              styles.amountInput,
+                              errors.income &&
+                                touched.income &&
+                                styles.inputErrorBorder,
+                            ]}>
+                            <Text style={styles.currencySymbol}>$</Text>
+                            <TextInput
+                              style={[styles.textInput, {flex: 1}]}
+                              value={values.income}
+                              onChangeText={handleChange('income')}
+                              onBlur={handleBlur('income')}
+                              placeholder="0"
+                              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                              keyboardType="decimal-pad"
+                              maxLength={6}
+                              returnKeyType="done"
+                              enablesReturnKeyAutomatically={true}
+                            />
+                          </View>
+                          {errors.income && touched.income && (
+                            <Text style={styles.errorText}>
+                              {errors.income}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
 
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setShowIncomeModal(false)}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleUpdateIncome}>
-                    <Text style={styles.confirmButtonText}>Update Income</Text>
-                  </TouchableOpacity>
-                </View>
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.cancelButton]}
+                          onPress={() => setShowIncomeModal(false)}>
+                          <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.confirmButton]}
+                          onPress={handleSubmit}>
+                          <Text style={styles.confirmButtonText}>
+                            Update Income
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </Formik>
               </View>
             </View>
           </Modal>
 
-          {/* Auto-Save Edit Modal */}
+          {/* Auto-Save Edit Modal with Formik */}
           <Modal
             isVisible={showAutoSaveModal}
             avoidKeyboard={true}
@@ -1259,125 +1307,71 @@ export default function FinancialReportScreen({navigation}: any) {
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.modalForm}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Auto-Save Percentage</Text>
-                    <View style={styles.amountInput}>
-                      <TextInput
-                        style={[styles.textInput, {flex: 1}]}
-                        value={newAutoSave}
-                        onChangeText={setNewAutoSave}
-                        placeholder="0"
-                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                        keyboardType="decimal-pad"
-                        maxLength={3}
-                        returnKeyType="done"
-                        enablesReturnKeyAutomatically={true}
-                      />
-                      <Text style={styles.currencySymbol}>%</Text>
-                    </View>
-                    <Text style={styles.noteText}>
-                      Percentage of monthly income to automatically save
-                    </Text>
-                  </View>
-                </View>
+                <Formik
+                  initialValues={{percentage: autoSavePercentage.toString()}}
+                  validationSchema={autoSaveValidationSchema}
+                  onSubmit={handleUpdateAutoSave}>
+                  {({
+                    values,
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    errors,
+                    touched,
+                  }) => (
+                    <>
+                      <View style={styles.modalForm}>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputLabel}>
+                            Auto-Save Percentage
+                          </Text>
+                          <View
+                            style={[
+                              styles.amountInput,
+                              errors.percentage &&
+                                touched.percentage &&
+                                styles.inputErrorBorder,
+                            ]}>
+                            <TextInput
+                              style={[styles.textInput, {flex: 1}]}
+                              value={values.percentage}
+                              onChangeText={handleChange('percentage')}
+                              onBlur={handleBlur('percentage')}
+                              placeholder="0"
+                              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                              keyboardType="decimal-pad"
+                              maxLength={3}
+                              returnKeyType="done"
+                              enablesReturnKeyAutomatically={true}
+                            />
+                            <Text style={styles.currencySymbol}>%</Text>
+                          </View>
+                          {errors.percentage && touched.percentage && (
+                            <Text style={styles.errorText}>
+                              {errors.percentage}
+                            </Text>
+                          )}
+                          <Text style={styles.noteText}>
+                            Percentage of monthly income to automatically save
+                          </Text>
+                        </View>
+                      </View>
 
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setShowAutoSaveModal(false)}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleUpdateAutoSave}>
-                    <Text style={styles.confirmButtonText}>Update %</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          <Modal isVisible={showWelcomeModal} avoidKeyboard={true}>
-            <View style={styles.welcomeModalOverlay}>
-              <View style={styles.welcomeModal}>
-                {/* Icon */}
-                <View style={styles.welcomeIconContainer}>
-                  <Target size={40} color="#F4C66A" />
-                </View>
-
-                {/* Title */}
-                <Text style={styles.welcomeTitle}>
-                  Welcome to Financial Goals!
-                </Text>
-                <Text style={styles.welcomeSubtitle}>
-                  Let's set up your financial tracking
-                </Text>
-
-                {/* Features list */}
-                <View style={styles.welcomeFeatures}>
-                  <View style={styles.welcomeFeature}>
-                    <View style={styles.welcomeFeatureIcon}>
-                      <DollarSign size={18} color="#4CD964" />
-                    </View>
-                    <Text style={styles.welcomeFeatureText}>
-                      Track your monthly income
-                    </Text>
-                  </View>
-                  <View style={styles.welcomeFeature}>
-                    <View
-                      style={[
-                        styles.welcomeFeatureIcon,
-                        {backgroundColor: 'rgba(244, 198, 106, 0.1)'},
-                      ]}>
-                      <PiggyBank size={18} color="#F4C66A" />
-                    </View>
-                    <Text style={styles.welcomeFeatureText}>
-                      Set auto-save percentage
-                    </Text>
-                  </View>
-                  <View style={styles.welcomeFeature}>
-                    <View
-                      style={[
-                        styles.welcomeFeatureIcon,
-                        {backgroundColor: 'rgba(247, 115, 22, 0.1)'},
-                      ]}>
-                      <Target size={18} color="#F97316" />
-                    </View>
-                    <Text style={styles.welcomeFeatureText}>
-                      Create savings goals
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Description */}
-                <Text style={styles.welcomeText}>
-                  Track your savings goals effectively.
-                </Text>
-
-                {/* Buttons */}
-                <View style={styles.welcomeButtons}>
-                  {/* <TouchableOpacity
-                    style={styles.welcomeButton}
-                    onPress={() => {
-                      setShowWelcomeModal(false);
-                      // setTimeout(() => {
-                      //   setShowIncomeModal(true);
-                      // }, 500);
-                    }}>
-                    <Text style={styles.welcomeButtonText}>Get Started →</Text>
-                  </TouchableOpacity> */}
-                  <TouchableOpacity
-                    style={[
-                      styles.welcomeButton,
-                      styles.welcomeButtonSecondary,
-                    ]}
-                    onPress={() => setShowWelcomeModal(false)}>
-                    <Text style={styles.welcomeButtonSecondaryText}>
-                      Understood
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.cancelButton]}
+                          onPress={() => setShowAutoSaveModal(false)}>
+                          <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.confirmButton]}
+                          onPress={handleSubmit}>
+                          <Text style={styles.confirmButtonText}>Update %</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </Formik>
               </View>
             </View>
           </Modal>
@@ -1395,27 +1389,24 @@ export default function FinancialReportScreen({navigation}: any) {
             onClose={() => setShowValidationModal(false)}
             onConfirm={() => {
               setShowValidationModal(false);
-              // If it's a warning about exceeding target, keep the modal open for editing
-              if (validationModalData.type === 'warning') {
-                // Focus back on the input field
-                // You might want to add refs to your inputs for this
-              }
             }}
           />
+
+          {/* Delete Confirmation Modal */}
+          <AppModal
+            visible={showDeleteModal}
+            title="Delete Goal"
+            message="Are you sure you want to delete this goal? This action cannot be undone."
+            type="warning"
+            onClose={() => {
+              setShowDeleteModal(false);
+              setGoalToDelete(null);
+            }}
+            onConfirm={handleConfirmDelete}
+            confirmText="Delete"
+            cancelText="Cancel"
+          />
         </SafeAreaView>
-        <AppModal
-          visible={showDeleteModal}
-          title="Delete Goal"
-          message="Are you sure you want to delete this goal? This action cannot be undone."
-          type="warning" // Use warning type for destructive actions
-          onClose={() => {
-            setShowDeleteModal(false);
-            setGoalToDelete(null);
-          }}
-          onConfirm={handleConfirmDelete}
-          confirmText="Delete"
-          cancelText="Cancel"
-        />
       </LinearGradient>
     </AppMainContainer>
   );
@@ -1482,10 +1473,6 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     marginBottom: 8,
-  },
-  profitChange: {
-    fontSize: 14,
-    fontWeight: '500',
   },
   sectionContainer: {
     backgroundColor: '#1F1D3A',
@@ -1608,16 +1595,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  editButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  editButtonText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   deleteButton: {
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
     borderWidth: 1,
@@ -1723,7 +1700,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -1833,126 +1809,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  // welcome Modal
-  // Add these styles to your existing stylesheet in BudgetScreen.tsx
-
-  // If you want a more visually appealing modal with icons:
-
-  welcomeModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  welcomeModal: {
-    backgroundColor: '#1F1D3A',
-    borderRadius: 24,
-    padding: 28,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(244, 198, 106, 0.3)',
-    shadowColor: '#F4C66A',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  welcomeIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(244, 198, 106, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(244, 198, 106, 0.3)',
-  },
-  welcomeTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  welcomeSubtitle: {
-    color: '#F4C66A',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  welcomeText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 28,
-    paddingHorizontal: 10,
-  },
-  welcomeFeatures: {
-    width: '100%',
-    marginBottom: 24,
-    gap: 12,
-  },
-  welcomeFeature: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  welcomeFeatureIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(76, 217, 100, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  welcomeFeatureText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    flex: 1,
-  },
-  welcomeButtons: {
-    width: '100%',
-    gap: 12,
-  },
-  welcomeButton: {
-    backgroundColor: '#F4C66A',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#F4C66A',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  welcomeButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  welcomeButtonSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: 'transparent',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  welcomeButtonSecondaryText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   datePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1964,40 +1820,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-
   datePickerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
   },
-
   dateText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
-
   placeholderText: {
     color: 'rgba(255, 255, 255, 0.5)',
   },
-
   calendarChevron: {
     transform: [{rotate: '-90deg'}],
     opacity: 0.7,
-  },
-  datePickerButtonPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderColor: 'rgba(244, 198, 106, 0.3)',
   },
   colorPickerContainer: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // colorPicker: {
-  //   flex: 1,
-  // },
   colorPickerContent: {
     paddingHorizontal: 8,
     gap: 12,
@@ -2022,5 +1867,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     fontStyle: 'italic',
+  },
+  // Formik validation styles
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  inputErrorBorder: {
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
   },
 });

@@ -12,6 +12,8 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
@@ -66,11 +68,42 @@ export default function ProfileScreen({navigation}: any) {
     profileImage: '',
   });
 
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
   const [pinData, setPinData] = useState({
     oldPin: '',
     newPin: '',
     confirmPin: '',
   });
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+        // Hide bottom tabs
+        navigation.getParent()?.setOptions({
+          tabBarStyle: {display: 'none'},
+        });
+      },
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        // Show bottom tabs
+        navigation.getParent()?.setOptions({
+          tabBarStyle: {display: 'flex'},
+        });
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [navigation]);
 
   // Initialize user data from Redux
   useEffect(() => {
@@ -312,10 +345,20 @@ export default function ProfileScreen({navigation}: any) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
           </View>
-          <KeyboardAwareScrollView>
-            <ScrollView
-              style={styles.container}
-              showsVerticalScrollIndicator={false}>
+
+          <KeyboardAwareScrollView
+            style={{flex: 1}}
+            contentContainerStyle={[
+              styles.scrollContent,
+              {paddingBottom: isKeyboardVisible ? 40 : 100},
+            ]}
+            enableOnAndroid={true}
+            extraScrollHeight={100}
+            keyboardShouldPersistTaps="handled"
+            enableAutomaticScroll={Platform.OS === 'ios'}
+            extraHeight={Platform.select({android: 150, ios: 0})}
+            showsVerticalScrollIndicator={false}>
+            <ScrollView style={{flex: 1, paddingBottom: 90}}>
               {/* Profile Section */}
               <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
@@ -540,7 +583,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    marginBottom: 80,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
