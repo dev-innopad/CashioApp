@@ -15,6 +15,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import debounce from 'lodash.debounce';
 import AppMainContainer from '../../components/AppMainContainer';
+import DatePicker from 'react-native-date-picker';
 import {
   ChevronLeft,
   Camera,
@@ -32,12 +33,15 @@ import {
 } from 'lucide-react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {addExpense} from '../../store/reducers/userData.slice';
 import {_showToast} from '../../services/UIs/ToastConfig';
 import {AppFonts, FontSize} from '../../assets/fonts';
 import {fetchAddressSuggestions} from '../../services/addressService';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import Modal from 'react-native-modal';
+import {RootState} from '../../store';
+import {NavigationKeys} from '../../constants/navigationKeys';
 
 interface Category {
   id: string;
@@ -50,7 +54,7 @@ interface Category {
 
 interface Expense {
   id: string;
-  amount: number;
+  amount: string | number;
   description: string;
   category: Category;
   date: Date;
@@ -103,19 +107,23 @@ export default function AddExpenseScreen({navigation, route}: any) {
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [afterModalCloseAction, setAfterModalCloseAction] = useState<
+    (() => void) | null
+  >(null);
+  const categories = useSelector(
+    (state: RootState) => state.userData.currentUser?.categories || [],
+  );
   const [expense, setExpense] = useState<Partial<Expense>>({
-    amount: 0,
+    amount: '',
     description: '',
-    category: initialCategories[0],
+    category: categories[0] || null,
     date: new Date(),
     location: '',
     notes: '',
   });
 
   const [receipt, setReceipt] = useState<any>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const handleAddressSearch = useCallback(
@@ -135,40 +143,50 @@ export default function AddExpenseScreen({navigation, route}: any) {
   );
 
   // Load categories if passed as route params
+  // useEffect(() => {
+  //   if (route.params?.updatedCategories) {
+  //     setCategories(route.params.updatedCategories);
+  //     // Update selected category if it exists
+  //     if (
+  //       expense.category &&
+  //       route.params.updatedCategories.find(c => c.id === expense.category?.id)
+  //     ) {
+  //       setExpense(prev => ({
+  //         ...prev,
+  //         category: route.params.updatedCategories.find(
+  //           c => c.id === expense.category?.id,
+  //         ),
+  //       }));
+  //     }
+  //   }
+  // }, [route.params?.updatedCategories]);
+
   useEffect(() => {
-    if (route.params?.updatedCategories) {
-      setCategories(route.params.updatedCategories);
-      // Update selected category if it exists
-      if (
-        expense.category &&
-        route.params.updatedCategories.find(c => c.id === expense.category?.id)
-      ) {
-        setExpense(prev => ({
-          ...prev,
-          category: route.params.updatedCategories.find(
-            c => c.id === expense.category?.id,
-          ),
-        }));
-      }
+    if (categories.length > 0 && !expense.category) {
+      setExpense(prev => ({
+        ...prev,
+        category: categories[0],
+      }));
     }
-  }, [route.params?.updatedCategories]);
+  }, [categories]);
 
   // Function to navigate to Add Category Screen
   const navigateToAddCategory = () => {
-    navigation.navigate('AddCategoryScreen', {
-      categories: categories,
-      onSaveCategories: (updatedCategories: Category[]) => {
-        // Update categories when coming back
-        setCategories(updatedCategories);
-        // Auto-select the newly added category (last one)
-        if (updatedCategories.length > 0) {
-          setExpense(prev => ({
-            ...prev,
-            category: updatedCategories[updatedCategories.length - 1],
-          }));
-        }
-      },
-    });
+    // navigation.navigate('AddCategoryScreen', {
+    //   categories: categories,
+    //   onSaveCategories: (updatedCategories: Category[]) => {
+    //     // Update categories when coming back
+    //     setCategories(updatedCategories);
+    //     // Auto-select the newly added category (last one)
+    //     if (updatedCategories.length > 0) {
+    //       setExpense(prev => ({
+    //         ...prev,
+    //         category: updatedCategories[updatedCategories.length - 1],
+    //       }));
+    //     }
+    //   },
+    // });
+    navigation.navigate(NavigationKeys.AddCategoryScreen);
   };
 
   // Handle image picker
@@ -205,11 +223,8 @@ export default function AddExpenseScreen({navigation, route}: any) {
   };
 
   // Handle date change
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setExpense({...expense, date: selectedDate});
-    }
+  const onDateChange = (selectedDate: Date) => {
+    setExpense({...expense, date: selectedDate});
   };
 
   // Format date for display
@@ -224,7 +239,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
 
   // Save expense
   const handleSaveExpense = () => {
-    if (!expense.amount || expense.amount <= 0) {
+    if (!expense.amount || parseFloat(expense.amount.toString()) <= 0) {
       _showToast('Please enter a valid amount', 'error');
       return;
     }
@@ -245,7 +260,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
 
     const newExpense = {
       id: Date.now().toString(),
-      amount: expense.amount!,
+      amount: Number(expense.amount!),
       description: expense.description!,
       category: expense.category!, // This should be an object
       date: dateString, // Store as string
@@ -273,21 +288,21 @@ export default function AddExpenseScreen({navigation, route}: any) {
       <LinearGradient colors={['#141326', '#24224A']} style={{flex: 1}}>
         <StatusBar barStyle={'light-content'} translucent={false} />
         <SafeAreaView style={{flex: 1}}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.headerButton}>
+              <ChevronLeft size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add Expense</Text>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveExpense}>
+              <Send size={24} color="#F4C66A" />
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
           <KeyboardAwareScrollView>
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.headerButton}>
-                <ChevronLeft size={24} color="#fff" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Add Expense</Text>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveExpense}>
-                <Send size={24} color="#F4C66A" />
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
             <ScrollView
               style={styles.container}
               showsVerticalScrollIndicator={false}>
@@ -309,7 +324,9 @@ export default function AddExpenseScreen({navigation, route}: any) {
                     placeholder="0.00"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     keyboardType="decimal-pad"
-                    maxLength={10}
+                    maxLength={6}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically={true}
                   />
                 </View>
               </View>
@@ -393,12 +410,41 @@ export default function AddExpenseScreen({navigation, route}: any) {
                   <Text style={styles.inputLabel}>Date</Text>
                   <TouchableOpacity
                     style={styles.dateSelector}
-                    onPress={() => setShowDatePicker(true)}>
-                    <Calendar size={20} color="#F4C66A" />
-                    <Text style={styles.dateText}>
-                      {formatDate(expense.date!)}
-                    </Text>
+                    onPress={() => setShowDatePicker(true)}
+                    activeOpacity={0.7}>
+                    <View style={styles.dateSelectorContent}>
+                      <Calendar size={20} color="#F4C66A" />
+                      <Text style={styles.dateText}>
+                        {formatDate(expense.date!)}
+                      </Text>
+                    </View>
+                    <ChevronLeft
+                      size={20}
+                      color="rgba(244, 198, 106, 0.7)"
+                      style={styles.dateSelectorChevron}
+                    />
                   </TouchableOpacity>
+
+                  <DatePicker
+                    modal
+                    open={showDatePicker}
+                    date={expense.date || new Date()}
+                    mode="date"
+                    onConfirm={selectedDate => {
+                      setShowDatePicker(false);
+                      setExpense({...expense, date: selectedDate});
+                    }}
+                    onCancel={() => {
+                      setShowDatePicker(false);
+                    }}
+                    theme={Platform.OS === 'ios' ? 'light' : 'dark'}
+                    confirmText="Select"
+                    cancelText="Cancel"
+                    title="Select Date"
+                    maximumDate={new Date()} // Disable future dates
+                    minimumDate={new Date(2000, 0, 1)} // Optional: Set min date
+                    androidVariant="nativeAndroid" // or "iosClone" for iOS-like on Android
+                  />
                 </View>
 
                 {/* Location */}
@@ -507,7 +553,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
             </ScrollView>
 
             {/* Category Picker Modal */}
-            {showCategoryPicker && (
+            {/* {showCategoryPicker && (
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                   <View style={styles.modalHeader}>
@@ -555,7 +601,6 @@ export default function AddExpenseScreen({navigation, route}: any) {
                       </TouchableOpacity>
                     ))}
 
-                    {/* Add New Category Option */}
                     <TouchableOpacity
                       style={styles.addNewCategoryOption}
                       onPress={() => {
@@ -575,10 +620,96 @@ export default function AddExpenseScreen({navigation, route}: any) {
                   </ScrollView>
                 </View>
               </View>
-            )}
+            )} */}
+
+            <Modal
+              isVisible={showCategoryPicker}
+              backdropOpacity={0.8}
+              style={styles.modal}
+              onBackdropPress={() => setShowCategoryPicker(false)}
+              onBackButtonPress={() => setShowCategoryPicker(false)}
+              onModalHide={() => {
+                if (afterModalCloseAction) {
+                  afterModalCloseAction();
+                  setAfterModalCloseAction(null); // Reset
+                }
+              }}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Select Category</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCategoryPicker(false)}>
+                    <X size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  style={styles.categoriesList}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.categoriesListContent}>
+                  {categories.map(category => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryOption,
+                        expense.category?.id === category.id &&
+                          styles.categoryOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setExpense({...expense, category});
+                        setShowCategoryPicker(false);
+                      }}
+                      activeOpacity={0.7}>
+                      <View
+                        style={[
+                          styles.categoryOptionIcon,
+                          {backgroundColor: category.color},
+                        ]}>
+                        <Text style={styles.categoryOptionIconText}>
+                          {category.icon}
+                        </Text>
+                      </View>
+                      <Text style={styles.categoryOptionName}>
+                        {category.name}
+                      </Text>
+                      {expense.category?.id === category.id && (
+                        <View style={styles.selectedIndicator}>
+                          <ChevronLeft
+                            size={20}
+                            color="#F97316"
+                            style={{transform: [{rotate: '-90deg'}]}}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+
+                  {/* Add New Category Option */}
+                  <TouchableOpacity
+                    style={styles.addNewCategoryOption}
+                    onPress={() => {
+                      setShowCategoryPicker(false);
+                      setTimeout(() => {
+                        navigateToAddCategory();
+                      }, 300);
+                    }}
+                    activeOpacity={0.7}>
+                    <View style={styles.addNewIcon}>
+                      <Plus size={20} color="#F4C66A" />
+                    </View>
+                    <Text style={styles.addNewText}>Add New Category</Text>
+                    <ChevronLeft
+                      size={20}
+                      color="#666"
+                      style={{transform: [{rotate: '-90deg'}]}}
+                    />
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            </Modal>
 
             {/* Date Picker */}
-            {showDatePicker && (
+            {/* {showDatePicker && (
               <DateTimePicker
                 value={expense.date!}
                 mode="date"
@@ -586,7 +717,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
                 onChange={onDateChange}
                 maximumDate={new Date()}
               />
-            )}
+            )} */}
           </KeyboardAwareScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -739,16 +870,35 @@ const styles = StyleSheet.create({
   dateSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
+  dateSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
   dateText: {
     color: '#fff',
-    fontSize: FontSize._16,
-    fontFamily: AppFonts.REGULAR,
-    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+
+  dateSelectorChevron: {
+    transform: [{rotate: '-90deg'}],
+    opacity: 0.7,
+  },
+
+  // Optional: Pressed state
+  dateSelectorPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(244, 198, 106, 0.3)',
   },
   locationInput: {
     flexDirection: 'row',
@@ -829,7 +979,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -949,5 +1099,14 @@ const styles = StyleSheet.create({
     fontSize: FontSize._14,
     fontFamily: AppFonts.REGULAR,
     flex: 1,
+  },
+  modal: {
+    margin: 0,
+    justifyContent: 'flex-end',
+  },
+  categoriesListContent: {
+    // paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 30,
   },
 });

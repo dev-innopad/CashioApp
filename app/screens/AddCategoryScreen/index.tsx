@@ -34,6 +34,9 @@ import {_showToast} from '../../services/UIs/ToastConfig';
 import AppModal from '../../components/AppModal';
 import * as Yup from 'yup';
 import {AppFonts, FontSize} from '../../assets/fonts';
+import {useSelector, useDispatch} from 'react-redux';
+import {RootState} from '../../store';
+import {addCategory, deleteCategory} from '../../store/reducers/userData.slice';
 
 // Default category icons
 const defaultIcons = [
@@ -87,78 +90,32 @@ interface Category {
   isDefault: boolean;
 }
 
-// Validation schema for new category
-const newCategorySchema = Yup.object().shape({
+// Validation schema
+const categorySchema = Yup.object().shape({
   name: Yup.string()
     .required('Category name is required')
     .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters'),
-  budget: Yup.string()
-    .test('is-valid-number', 'Budget must be a valid number', value => {
-      if (!value || value.trim() === '') return true; // Allow empty (optional)
-      return !isNaN(Number(value)) && Number(value) >= 0;
-    })
-    .test('max-length', 'Budget is too large', value => {
-      if (!value) return true;
-      return Number(value) <= 1000000; // Max 1 million
-    }),
-});
-
-// Validation schema for editing category
-const editCategorySchema = Yup.object().shape({
-  name: Yup.string()
-    .required('Category name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters'),
+    .max(50, 'Name must not exceed 50 characters')
+    .trim(),
   budget: Yup.number()
     .typeError('Budget must be a number')
     .min(0, 'Budget cannot be negative')
     .max(1000000, 'Budget cannot exceed $1,000,000')
     .required('Budget is required'),
+  icon: Yup.string().required('Icon is required'),
+  color: Yup.string().required('Color is required'),
 });
 
 export default function AddCategoryScreen({navigation, route}: any) {
-  const existingCategories: Category[] = route.params?.categories || [];
+  const dispatch = useDispatch();
+
+  // Get categories from Redux
+  const existingCategories = useSelector(
+    (state: RootState) => state.userData.currentUser?.categories || [],
+  );
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showModal, setShowModal] = useState(false);
-
-  const [categories, setCategories] = useState<Category[]>([
-    ...existingCategories,
-    // Default categories
-    {
-      id: '1',
-      name: 'Food',
-      icon: '🍔',
-      color: '#F97316',
-      budget: 5000,
-      isDefault: true,
-    },
-    {
-      id: '2',
-      name: 'Transport',
-      icon: '🚗',
-      color: '#22D3EE',
-      budget: 3000,
-      isDefault: true,
-    },
-    {
-      id: '3',
-      name: 'Shopping',
-      icon: '🛍️',
-      color: '#86EFAC',
-      budget: 4000,
-      isDefault: true,
-    },
-    {
-      id: '4',
-      name: 'Entertainment',
-      icon: '🎬',
-      color: '#A855F7',
-      budget: 2000,
-      isDefault: true,
-    },
-  ]);
 
   const [newCategory, setNewCategory] = useState({
     name: '',
@@ -167,151 +124,185 @@ export default function AddCategoryScreen({navigation, route}: any) {
     budget: '',
   });
 
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    budget?: string;
+  }>({});
+
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showCustomIconModal, setShowCustomIconModal] = useState(false);
-  const [customIcon, setCustomIcon] = useState('');
 
-  // Update useEffect for back handler
-  useEffect(() => {
-    // Check if there are unsaved changes
-    const hasChanges =
-      newCategory.name.trim() !== '' ||
-      newCategory.budget !== '' ||
-      categories.length !== existingCategories.length ||
-      JSON.stringify(categories) !== JSON.stringify(existingCategories);
-
-    setHasUnsavedChanges(hasChanges);
-  }, [newCategory, categories, existingCategories]);
-
-  // Update the back handler function
-  const handleBack = () => {
-    if (hasUnsavedChanges) {
-      setShowModal(true);
-    } else {
-      navigation.goBack();
-    }
-  };
-
-  // Save categories and go back
-  const handleSave = () => {
-    // Filter out empty categories
-    const validCategories = categories.filter(cat => cat.name.trim() !== '');
-
-    // Pass back to previous screen
-    if (route.params?.onSaveCategories) {
-      route.params.onSaveCategories(validCategories);
-    }
-
-    navigation.goBack();
-  };
-
-  // Add new category
-  const handleAddCategory = () => {
-    if (!newCategory.name.trim()) {
-      _showToast('Please enter a category name', 'error');
-      return;
-    }
-
-    const newCat: Category = {
-      id: Date.now().toString(),
-      name: newCategory.name,
-      icon: newCategory.icon,
-      color: newCategory.color,
-      budget: parseFloat(newCategory.budget) || 0,
-      isDefault: false,
-    };
-
-    setCategories([...categories, newCat]);
-    setNewCategory({
-      name: '',
-      icon: '🍔',
-      color: '#F97316',
-      budget: '',
-    });
-  };
-
-  // Update category
-  const handleUpdateCategory = () => {
-    if (!editingCategory?.name.trim()) {
-      // Alert.alert('Error', 'Please enter a category name');
-      _showToast('Please enter a category name', 'Error');
-      return;
-    }
-
-    setCategories(
-      categories.map(cat =>
-        cat.id === editingCategory.id ? editingCategory : cat,
-      ),
+  // Check if category name already exists (case-insensitive)
+  const isCategoryNameExists = (name: string) => {
+    const normalizedName = name.toLowerCase().trim();
+    return existingCategories.some(
+      category => category.name.toLowerCase().trim() === normalizedName,
     );
-    setEditingCategory(null);
   };
 
-  // Delete category
-  const handleDeleteCategory = (id: string) => {
+  // Validate form
+  const validateForm = async () => {
+    try {
+      await categorySchema.validate(newCategory, {abortEarly: false});
+
+      // Check if category name already exists
+      if (isCategoryNameExists(newCategory.name)) {
+        setValidationErrors({
+          name: 'Category with this name already exists',
+        });
+        return false;
+      }
+
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof Yup.ValidationError) {
+        const errors: any = {};
+        error.inner.forEach(err => {
+          errors[err.path!] = err.message;
+        });
+        setValidationErrors(errors);
+      }
+      return false;
+    }
+  };
+
+  const handleDeleteCategory = (id: string, isDefault: boolean) => {
+    if (isDefault) {
+      _showToast('Default categories cannot be deleted', 'error');
+      return;
+    }
+
     Alert.alert(
       'Delete Category',
-      'Are you sure you want to delete this category? All expenses in this category will be deleted.',
+      'Are you sure you want to delete this category?',
       [
         {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setCategories(categories.filter(cat => cat.id !== id));
+            dispatch(deleteCategory(id));
+            _showToast('Category deleted successfully', 'success');
           },
         },
       ],
     );
   };
 
+  // Handle text input changes with validation
+  const handleNameChange = async (text: string) => {
+    setNewCategory({...newCategory, name: text});
+
+    // Clear validation error for name when user starts typing
+    if (validationErrors.name) {
+      setValidationErrors({...validationErrors, name: undefined});
+    }
+  };
+
+  const handleBudgetChange = (text: string) => {
+    // Allow only numbers and decimal point
+    const cleanText = text.replace(/[^0-9.]/g, '');
+    setNewCategory({...newCategory, budget: cleanText});
+
+    // Clear validation error for budget when user starts typing
+    if (validationErrors.budget) {
+      setValidationErrors({...validationErrors, budget: undefined});
+    }
+  };
+
+  // Add new category
+  const handleAddCategory = async () => {
+    const isValid = await validateForm();
+
+    if (!isValid) {
+      _showToast('Please Enter Detail', 'error');
+      return;
+    }
+
+    // Check for duplicate category name (case-insensitive)
+    if (isCategoryNameExists(newCategory.name)) {
+      _showToast('Category with this name already exists', 'error');
+      return;
+    }
+
+    const categoryData = {
+      name: newCategory.name.trim(), // Trim whitespace
+      icon: newCategory.icon,
+      color: newCategory.color,
+      budget: parseFloat(newCategory.budget) || 0,
+    };
+
+    // Dispatch to Redux
+    dispatch(addCategory(categoryData));
+
+    _showToast('Category added successfully', 'success');
+
+    // Reset form
+    setNewCategory({
+      name: '',
+      icon: '🍔',
+      color: '#F97316',
+      budget: '',
+    });
+    setValidationErrors({});
+  };
+
+  // Update existing category
+  const handleUpdateCategory = async (category: Category) => {
+    // If name changed, check for duplicates
+    const originalCategory = existingCategories.find(c => c.id === category.id);
+    if (originalCategory && category.name !== originalCategory.name) {
+      if (isCategoryNameExists(category.name)) {
+        _showToast('Category with this name already exists', 'error');
+        return;
+      }
+    }
+
+    dispatch(
+      updateCategory({
+        categoryId: category.id,
+        updates: {
+          name: category.name.trim(),
+          icon: category.icon,
+          color: category.color,
+          budget: category.budget,
+        },
+      }),
+    );
+
+    _showToast('Category updated successfully', 'success');
+  };
+
   // Pick icon from emoji
   const selectIcon = (icon: string) => {
-    if (editingCategory) {
-      setEditingCategory({...editingCategory, icon});
-    } else {
-      setNewCategory({...newCategory, icon});
-    }
+    setNewCategory({...newCategory, icon});
     setShowIconPicker(false);
   };
 
   // Select color
   const selectColor = (color: string) => {
-    if (editingCategory) {
-      setEditingCategory({...editingCategory, color});
-    } else {
-      setNewCategory({...newCategory, color});
-    }
+    setNewCategory({...newCategory, color});
     setShowColorPicker(false);
   };
 
-  // Pick image from gallery
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibrary({
-      mediaType: 'photo',
-      quality: 1,
-    });
+  // Update back handler to check for changes
+  useEffect(() => {
+    const hasChanges =
+      newCategory.name.trim() !== '' ||
+      newCategory.budget !== '' ||
+      validationErrors.name ||
+      validationErrors.budget;
 
-    if (result.assets && result.assets[0]) {
-      // Handle the image - in a real app, you'd upload to server or save locally
-      _showToast('Image selected', 'success');
+    setHasUnsavedChanges(hasChanges);
+  }, [newCategory, validationErrors]);
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      setShowModal(true);
+    } else {
+      navigation.goBack();
     }
-    setShowCustomIconModal(false);
-  };
-
-  // Take photo
-  const takePhoto = async () => {
-    const result = await ImagePicker.launchCamera({
-      mediaType: 'photo',
-      quality: 1,
-    });
-
-    if (result.assets && result.assets[0]) {
-      // Handle the image - in a real app, you'd upload to server or save locally
-      _showToast('Image selected', 'success');
-    }
-    setShowCustomIconModal(false);
   };
 
   return (
@@ -324,50 +315,67 @@ export default function AddCategoryScreen({navigation, route}: any) {
               <ChevronLeft size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Manage Categories</Text>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Save size={24} color="#F4C66A" />
-              <Text style={styles.saveButtonText}>Save</Text>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={() => navigation.goBack()}>
+              {/* <X size={24} color="#F4C66A" /> */}
+              <Text style={styles.saveButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
+
           <ScrollView
             style={styles.container}
-            showsVerticalScrollIndicator={false}>
-            {/* Header */}
-
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}>
             {/* Add New Category Form */}
             <View style={styles.addCategoryContainer}>
               <Text style={styles.sectionTitle}>Add New Category</Text>
 
-              <View style={styles.formRow}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Category Name</Text>
+              {/* Category Name Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Category Name</Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    validationErrors.name && styles.inputError,
+                  ]}
+                  value={newCategory.name}
+                  onChangeText={handleNameChange}
+                  placeholder="e.g., Groceries"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  maxLength={50}
+                />
+                {validationErrors.name && (
+                  <Text style={styles.errorText}>{validationErrors.name}</Text>
+                )}
+              </View>
+
+              {/* Budget Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Monthly Budget</Text>
+                <View
+                  style={[
+                    styles.budgetInput,
+                    validationErrors.budget && styles.inputError,
+                  ]}>
+                  <DollarSign size={20} color="#F4C66A" />
                   <TextInput
-                    style={styles.textInput}
-                    value={newCategory.name}
-                    onChangeText={text =>
-                      setNewCategory({...newCategory, name: text})
-                    }
-                    placeholder="e.g., Groceries"
+                    style={[styles.textInput, {flex: 1}]}
+                    value={newCategory.budget}
+                    onChangeText={handleBudgetChange}
+                    placeholder="0.00"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically={true}
+                    maxLength={6}
                   />
                 </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Monthly Budget</Text>
-                  <View style={styles.budgetInput}>
-                    <DollarSign size={20} color="#F4C66A" />
-                    <TextInput
-                      style={[styles.textInput, {flex: 1}]}
-                      value={newCategory.budget}
-                      onChangeText={text =>
-                        setNewCategory({...newCategory, budget: text})
-                      }
-                      placeholder="0.00"
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-                </View>
+                {validationErrors.budget && (
+                  <Text style={styles.errorText}>
+                    {validationErrors.budget}
+                  </Text>
+                )}
               </View>
 
               {/* Icon Selection */}
@@ -407,6 +415,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                 </TouchableOpacity>
               </View>
 
+              {/* Add Button */}
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={handleAddCategory}>
@@ -418,10 +427,10 @@ export default function AddCategoryScreen({navigation, route}: any) {
             {/* Existing Categories */}
             <View style={styles.categoriesContainer}>
               <Text style={styles.sectionTitle}>
-                Your Categories ({categories.length})
+                Your Categories ({existingCategories.length})
               </Text>
 
-              {categories.map(category => (
+              {existingCategories.map(category => (
                 <View key={category.id} style={styles.categoryItem}>
                   <View style={styles.categoryInfo}>
                     <View
@@ -436,12 +445,15 @@ export default function AddCategoryScreen({navigation, route}: any) {
                     <View style={styles.categoryDetails}>
                       <Text style={styles.categoryName}>{category.name}</Text>
                       <Text style={styles.categoryBudget}>
-                        Budget: ${category.budget.toLocaleString()}
+                        Budget: ₹{category.budget.toLocaleString()}
                       </Text>
+                      {category.isDefault && (
+                        <Text style={styles.defaultBadge}>Default</Text>
+                      )}
                     </View>
                   </View>
 
-                  <View style={styles.categoryActions}>
+                  {/* <View style={styles.categoryActions}>
                     {!category.isDefault && (
                       <>
                         <TouchableOpacity
@@ -453,12 +465,17 @@ export default function AddCategoryScreen({navigation, route}: any) {
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => handleDeleteCategory(category.id)}>
+                          onPress={() =>
+                            handleDeleteCategory(
+                              category.id,
+                              category.isDefault,
+                            )
+                          }>
                           <Trash2 size={18} color="#FF6B6B" />
                         </TouchableOpacity>
                       </>
                     )}
-                  </View>
+                  </View> */}
                 </View>
               ))}
             </View>
@@ -479,7 +496,6 @@ export default function AddCategoryScreen({navigation, route}: any) {
                   </TouchableOpacity>
                 </View>
 
-                {/* Remove justifyContent from ScrollView style */}
                 <ScrollView
                   style={styles.iconsGrid}
                   contentContainerStyle={styles.iconsGridContent}
@@ -492,28 +508,13 @@ export default function AddCategoryScreen({navigation, route}: any) {
                       <View
                         style={[
                           styles.iconOptionCircle,
-                          {
-                            backgroundColor:
-                              editingCategory?.color || newCategory.color,
-                          },
+                          {backgroundColor: newCategory.color},
                         ]}>
                         <Text style={styles.iconOptionText}>{icon}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
-
-                <TouchableOpacity
-                  style={styles.customIconButton}
-                  onPress={() => {
-                    setShowIconPicker(false);
-                    setShowCustomIconModal(true);
-                  }}>
-                  <Camera size={20} color="#fff" />
-                  <Text style={styles.customIconButtonText}>
-                    Use Custom Image
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
           </Modal>
@@ -545,8 +546,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
                           {backgroundColor: color},
                         ]}
                       />
-                      {(editingCategory?.color === color ||
-                        newCategory.color === color) && (
+                      {newCategory.color === color && (
                         <Check
                           size={16}
                           color="#fff"
@@ -560,42 +560,7 @@ export default function AddCategoryScreen({navigation, route}: any) {
             </View>
           </Modal>
 
-          {/* Custom Icon Modal */}
-          <Modal
-            visible={showCustomIconModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowCustomIconModal(false)}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Custom Icon</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowCustomIconModal(false)}>
-                    <X size={24} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.customIconOptions}>
-                  <TouchableOpacity
-                    style={styles.customIconOption}
-                    onPress={pickImage}>
-                    <ImageIcon size={32} color="#F4C66A" />
-                    <Text style={styles.customIconOptionText}>
-                      Choose from Gallery
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.customIconOption}
-                    onPress={takePhoto}>
-                    <Camera size={32} color="#F4C66A" />
-                    <Text style={styles.customIconOptionText}>Take Photo</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
+          {/* Discard Changes Modal */}
           <AppModal
             visible={showModal}
             type="warning"
@@ -619,6 +584,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -667,13 +635,8 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.BOLD,
     marginBottom: 20,
   },
-  formRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
   inputContainer: {
-    flex: 1,
+    marginBottom: 16,
   },
   inputLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -688,6 +651,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: FontSize._16,
     fontFamily: AppFonts.REGULAR,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: FontSize._12,
+    fontFamily: AppFonts.REGULAR,
+    marginTop: 4,
+    marginLeft: 4,
   },
   budgetInput: {
     flexDirection: 'row',
@@ -806,6 +780,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize._14,
     fontFamily: AppFonts.REGULAR,
   },
+  defaultBadge: {
+    color: '#F4C66A',
+    fontSize: FontSize._12,
+    fontFamily: AppFonts.REGULAR,
+    backgroundColor: 'rgba(244, 198, 106, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
   categoryActions: {
     flexDirection: 'row',
     gap: 12,
@@ -874,21 +859,6 @@ const styles = StyleSheet.create({
     gap: 16,
     justifyContent: 'center',
   },
-  customIconButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(249, 115, 22, 0.2)',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 10,
-  },
-  customIconButtonText: {
-    color: '#fff',
-    fontSize: FontSize._16,
-    fontFamily: AppFonts.REGULAR,
-  },
   colorOption: {
     width: 50,
     height: 50,
@@ -903,22 +873,5 @@ const styles = StyleSheet.create({
   },
   colorSelected: {
     position: 'absolute',
-  },
-  customIconOptions: {
-    gap: 16,
-  },
-  customIconOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 20,
-  },
-  customIconOptionText: {
-    color: '#fff',
-    fontSize: FontSize._16,
-    fontFamily: AppFonts.REGULAR,
-    flex: 1,
   },
 });

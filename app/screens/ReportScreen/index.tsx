@@ -808,14 +808,14 @@ export default function ReportScreen({navigation}: any) {
                   </View>
                 )}
 
-                <Animated.View
+                {/* <Animated.View
                   style={[
                     styles.advancedBreakdownContainer,
                     {
                       opacity: fadeAnim,
                       transform: [{translateY: slideAnim}],
                     },
-                  ]}></Animated.View>
+                  ]}></Animated.View> */}
               </>
             )}
 

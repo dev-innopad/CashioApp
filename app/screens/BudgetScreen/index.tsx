@@ -12,9 +12,11 @@ import {
   // Modal,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppMainContainer from '../../components/AppMainContainer';
+import DatePicker from 'react-native-date-picker';
 import {
   TrendingUp,
   Target,
@@ -113,11 +115,18 @@ export default function FinancialReportScreen({navigation}: any) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+  };
+
   // Goal form state
   const [goalFormData, setGoalFormData] = useState<GoalFormData>({
     name: '',
     target: '',
-    saved: '0',
+    saved: '',
     color: defaultColors[0],
     deadline: new Date().toISOString().split('T')[0],
   });
@@ -623,6 +632,7 @@ export default function FinancialReportScreen({navigation}: any) {
             onModalHide={() => {
               setShowGoalModal(false);
               resetGoalForm();
+              setShowDatePicker(false);
             }}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
@@ -655,7 +665,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     <View style={[styles.inputContainer, {flex: 1}]}>
                       <Text style={styles.inputLabel}>Target Amount</Text>
                       <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>₹</Text>
+                        <Text style={styles.currencySymbol}>$</Text>
                         <TextInput
                           style={[styles.textInput, {flex: 1}]}
                           value={goalFormData.target}
@@ -665,6 +675,9 @@ export default function FinancialReportScreen({navigation}: any) {
                           placeholder="0"
                           placeholderTextColor="rgba(255, 255, 255, 0.5)"
                           keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          enablesReturnKeyAutomatically={true}
+                          maxLength={6}
                         />
                       </View>
                     </View>
@@ -672,7 +685,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     <View style={[styles.inputContainer, {flex: 1}]}>
                       <Text style={styles.inputLabel}>Already Saved</Text>
                       <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>₹</Text>
+                        <Text style={styles.currencySymbol}>$</Text>
                         <TextInput
                           style={[styles.textInput, {flex: 1}]}
                           value={goalFormData.saved}
@@ -682,27 +695,70 @@ export default function FinancialReportScreen({navigation}: any) {
                           placeholder="0"
                           placeholderTextColor="rgba(255, 255, 255, 0.5)"
                           keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          enablesReturnKeyAutomatically={true}
+                          maxLength={6}
                         />
                       </View>
                     </View>
                   </View>
 
+                  {/* Inside Add Goal Modal - Replace the existing Target Date section */}
                   <View style={styles.inputContainer}>
                     <Text style={styles.inputLabel}>
                       Target Date (Optional)
                     </Text>
-                    <TextInput
-                      style={styles.textInput}
-                      value={goalFormData.deadline}
-                      onChangeText={text =>
-                        setGoalFormData({...goalFormData, deadline: text})
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(true)}
+                      style={styles.datePickerButton}
+                      activeOpacity={0.7}>
+                      <View style={styles.datePickerContent}>
+                        <Calendar size={20} color="rgba(255, 255, 255, 0.7)" />
+                        <Text
+                          style={[
+                            styles.dateText,
+                            !goalFormData.deadline && styles.placeholderText,
+                          ]}>
+                          {goalFormData.deadline || 'Select Date'}
+                        </Text>
+                      </View>
+                      <ChevronLeft
+                        size={20}
+                        color="rgba(255, 255, 255, 0.5)"
+                        style={styles.calendarChevron}
+                      />
+                    </TouchableOpacity>
+
+                    <DatePicker
+                      modal
+                      open={showDatePicker}
+                      date={
+                        goalFormData.deadline
+                          ? new Date(goalFormData.deadline)
+                          : new Date()
                       }
-                      placeholder="YYYY-MM-DD"
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      mode="date"
+                      onConfirm={date => {
+                        setShowDatePicker(false);
+                        setGoalFormData({
+                          ...goalFormData,
+                          deadline: formatDate(date),
+                        });
+                      }}
+                      onCancel={() => {
+                        setShowDatePicker(false);
+                      }}
+                      theme={Platform.OS === 'ios' ? 'light' : 'dark'}
+                      confirmText="Select"
+                      cancelText="Cancel"
+                      title="Select Target Date"
+                      minimumDate={new Date()} // Optional: Disable past dates
+                      maximumDate={new Date(2100, 0, 1)} // Optional: Set max date
+                      androidVariant="nativeAndroid"
                     />
                   </View>
 
-                  <View style={styles.inputContainer}>
+                  {/* <View style={styles.inputContainer}>
                     <Text style={styles.inputLabel}>Select Color</Text>
                     <ScrollView
                       horizontal
@@ -726,6 +782,57 @@ export default function FinancialReportScreen({navigation}: any) {
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
+                  </View> */}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Select Color</Text>
+
+                    <View style={styles.colorPickerContainer}>
+                      {/* Left fade gradient */}
+                      <LinearGradient
+                        colors={['#1F1D3A', 'transparent']}
+                        start={{x: 0, y: 0}}
+                        end={{x: 1, y: 0}}
+                        style={styles.leftFade}
+                        pointerEvents="none"
+                      />
+
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.colorPicker}
+                        contentContainerStyle={styles.colorPickerContent}>
+                        {defaultColors.map(color => (
+                          <TouchableOpacity
+                            key={color}
+                            style={[
+                              styles.colorOption,
+                              {backgroundColor: color},
+                              goalFormData.color === color &&
+                                styles.colorOptionSelected,
+                            ]}
+                            onPress={() =>
+                              setGoalFormData({...goalFormData, color})
+                            }>
+                            {goalFormData.color === color && (
+                              <Check size={16} color="#fff" />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+
+                      <LinearGradient
+                        colors={['transparent', '#1F1D3A']}
+                        start={{x: 0, y: 0}}
+                        end={{x: 1, y: 0}}
+                        style={styles.rightFade}
+                        pointerEvents="none"
+                      />
+                    </View>
+
+                    {/* Scroll hint text */}
+                    <Text style={styles.scrollHintText}>
+                      Swipe to see more colors
+                    </Text>
                   </View>
                 </ScrollView>
 
@@ -755,6 +862,7 @@ export default function FinancialReportScreen({navigation}: any) {
             onModalHide={() => {
               setShowEditGoalModal(null);
               resetGoalForm();
+              setShowEditDatePicker(false);
             }}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
@@ -786,7 +894,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     <View style={[styles.inputContainer, {flex: 1}]}>
                       <Text style={styles.inputLabel}>Target Amount</Text>
                       <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>₹</Text>
+                        <Text style={styles.currencySymbol}>$</Text>
                         <TextInput
                           style={[styles.textInput, {flex: 1}]}
                           value={goalFormData.target}
@@ -794,6 +902,9 @@ export default function FinancialReportScreen({navigation}: any) {
                             setGoalFormData({...goalFormData, target: text})
                           }
                           keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          enablesReturnKeyAutomatically={true}
+                          maxLength={6}
                         />
                       </View>
                     </View>
@@ -801,7 +912,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     <View style={[styles.inputContainer, {flex: 1}]}>
                       <Text style={styles.inputLabel}>Already Saved</Text>
                       <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>₹</Text>
+                        <Text style={styles.currencySymbol}>$</Text>
                         <TextInput
                           style={[styles.textInput, {flex: 1}]}
                           value={goalFormData.saved}
@@ -809,50 +920,120 @@ export default function FinancialReportScreen({navigation}: any) {
                             setGoalFormData({...goalFormData, saved: text})
                           }
                           keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          enablesReturnKeyAutomatically={true}
+                          maxLength={6}
                         />
                       </View>
                     </View>
                   </View>
 
+                  {/* Inside Edit Goal Modal - Replace the existing Target Date section */}
                   <View style={styles.inputContainer}>
                     <Text style={styles.inputLabel}>
                       Target Date (Optional)
                     </Text>
-                    <TextInput
-                      style={styles.textInput}
-                      value={goalFormData.deadline}
-                      onChangeText={text =>
-                        setGoalFormData({...goalFormData, deadline: text})
+                    <TouchableOpacity
+                      onPress={() => setShowEditDatePicker(true)}
+                      style={styles.datePickerButton}
+                      activeOpacity={0.7}>
+                      <View style={styles.datePickerContent}>
+                        <Calendar size={20} color="rgba(255, 255, 255, 0.7)" />
+                        <Text
+                          style={[
+                            styles.dateText,
+                            !goalFormData.deadline && styles.placeholderText,
+                          ]}>
+                          {goalFormData.deadline || 'Select Date'}
+                        </Text>
+                      </View>
+                      <ChevronLeft
+                        size={20}
+                        color="rgba(255, 255, 255, 0.5)"
+                        style={styles.calendarChevron}
+                      />
+                    </TouchableOpacity>
+
+                    <DatePicker
+                      modal
+                      open={showEditDatePicker}
+                      date={
+                        goalFormData.deadline
+                          ? new Date(goalFormData.deadline)
+                          : new Date()
                       }
-                      placeholder="YYYY-MM-DD"
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      mode="date"
+                      onConfirm={date => {
+                        setShowEditDatePicker(false);
+                        setGoalFormData({
+                          ...goalFormData,
+                          deadline: formatDate(date),
+                        });
+                      }}
+                      onCancel={() => {
+                        setShowEditDatePicker(false);
+                      }}
+                      theme={Platform.OS === 'ios' ? 'light' : 'dark'}
+                      confirmText="Select"
+                      cancelText="Cancel"
+                      title="Select Target Date"
+                      minimumDate={new Date()}
+                      maximumDate={new Date(2100, 0, 1)}
+                      androidVariant="nativeAndroid"
                     />
                   </View>
 
                   <View style={styles.inputContainer}>
                     <Text style={styles.inputLabel}>Select Color</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.colorPicker}>
-                      {defaultColors.map(color => (
-                        <TouchableOpacity
-                          key={color}
-                          style={[
-                            styles.colorOption,
-                            {backgroundColor: color},
-                            goalFormData.color === color &&
-                              styles.colorOptionSelected,
-                          ]}
-                          onPress={() =>
-                            setGoalFormData({...goalFormData, color})
-                          }>
-                          {goalFormData.color === color && (
-                            <Check size={16} color="#fff" />
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
+
+                    <View style={styles.colorPickerContainer}>
+                      {/* Left fade gradient */}
+                      <LinearGradient
+                        colors={['#1F1D3A', 'transparent']}
+                        start={{x: 0, y: 0}}
+                        end={{x: 1, y: 0}}
+                        style={styles.leftFade}
+                        pointerEvents="none"
+                      />
+
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.colorPicker}
+                        contentContainerStyle={styles.colorPickerContent}>
+                        {defaultColors.map(color => (
+                          <TouchableOpacity
+                            key={color}
+                            style={[
+                              styles.colorOption,
+                              {backgroundColor: color},
+                              goalFormData.color === color &&
+                                styles.colorOptionSelected,
+                            ]}
+                            onPress={() =>
+                              setGoalFormData({...goalFormData, color})
+                            }>
+                            {goalFormData.color === color && (
+                              <Check size={16} color="#fff" />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+
+                      {/* Right fade gradient */}
+                      <LinearGradient
+                        colors={['transparent', '#1F1D3A']}
+                        start={{x: 0, y: 0}}
+                        end={{x: 1, y: 0}}
+                        style={styles.rightFade}
+                        pointerEvents="none"
+                      />
+                    </View>
+
+                    {/* Scroll hint text */}
+                    <Text style={styles.scrollHintText}>
+                      Swipe to see more colors
+                    </Text>
                   </View>
                 </ScrollView>
 
@@ -915,7 +1096,7 @@ export default function FinancialReportScreen({navigation}: any) {
                     <View style={styles.inputContainer}>
                       <Text style={styles.inputLabel}>Amount to Add</Text>
                       <View style={styles.amountInput}>
-                        <Text style={styles.currencySymbol}>₹</Text>
+                        <Text style={styles.currencySymbol}>$</Text>
                         <TextInput
                           style={[styles.textInput, {flex: 1}]}
                           value={fundAmount}
@@ -923,6 +1104,9 @@ export default function FinancialReportScreen({navigation}: any) {
                           placeholder="0"
                           placeholderTextColor="rgba(255, 255, 255, 0.5)"
                           keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          enablesReturnKeyAutomatically={true}
+                          maxLength={6}
                         />
                       </View>
                     </View>
@@ -973,7 +1157,7 @@ export default function FinancialReportScreen({navigation}: any) {
                   <View style={styles.inputContainer}>
                     <Text style={styles.inputLabel}>Monthly Income</Text>
                     <View style={styles.amountInput}>
-                      <Text style={styles.currencySymbol}>₹</Text>
+                      <Text style={styles.currencySymbol}>$</Text>
                       <TextInput
                         style={[styles.textInput, {flex: 1}]}
                         value={newIncome}
@@ -982,6 +1166,8 @@ export default function FinancialReportScreen({navigation}: any) {
                         placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         keyboardType="decimal-pad"
                         maxLength={6}
+                        returnKeyType="done"
+                        enablesReturnKeyAutomatically={true}
                       />
                     </View>
                   </View>
@@ -1031,6 +1217,8 @@ export default function FinancialReportScreen({navigation}: any) {
                         placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         keyboardType="decimal-pad"
                         maxLength={3}
+                        returnKeyType="done"
+                        enablesReturnKeyAutomatically={true}
                       />
                       <Text style={styles.currencySymbol}>%</Text>
                     </View>
@@ -1560,7 +1748,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   confirmButton: {
@@ -1568,7 +1756,7 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#000',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   // welcome Modal
@@ -1690,5 +1878,75 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 16,
     fontWeight: '600',
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+
+  datePickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+
+  dateText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+
+  placeholderText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+
+  calendarChevron: {
+    transform: [{rotate: '-90deg'}],
+    opacity: 0.7,
+  },
+  datePickerButtonPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(244, 198, 106, 0.3)',
+  },
+  colorPickerContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  // colorPicker: {
+  //   flex: 1,
+  // },
+  colorPickerContent: {
+    paddingHorizontal: 8,
+    gap: 12,
+  },
+  leftFade: {
+    position: 'absolute',
+    left: 0,
+    width: 30,
+    height: 60,
+    zIndex: 1,
+  },
+  rightFade: {
+    position: 'absolute',
+    right: 0,
+    width: 30,
+    height: 60,
+    zIndex: 1,
+  },
+  scrollHintText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
   },
 });

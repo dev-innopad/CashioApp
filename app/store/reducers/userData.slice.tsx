@@ -257,6 +257,22 @@ const userDataSlice = createSlice({
         }
       }
     },
+    // Add this to your existing reducers
+    deleteCategory: (state, action: PayloadAction<string>) => {
+      if (state.currentUser) {
+        state.currentUser.categories = state.currentUser.categories.filter(
+          cat => cat.id !== action.payload,
+        );
+
+        // Update in users array
+        const userIndex = state.users.findIndex(
+          u => u.id === state.currentUser!.id,
+        );
+        if (userIndex !== -1) {
+          state.users[userIndex].categories = state.currentUser.categories;
+        }
+      }
+    },
 
     // Expense management
     addExpense: (state, action: PayloadAction<Omit<Expense, 'id'>>) => {
@@ -311,6 +327,7 @@ export const {
   updateUserProfile,
   updateCategory,
   addCategory,
+  deleteCategory,
   addExpense,
   updateExpense,
   deleteExpense,

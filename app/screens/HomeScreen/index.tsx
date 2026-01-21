@@ -52,81 +52,83 @@ import {NavigationKeys} from '../../constants/navigationKeys';
 import {AppFonts, FontSize} from '../../assets/fonts';
 
 // Icon mapping function to ensure consistency
-const getCategoryIcon = (categoryName: string) => {
-  if (!categoryName) return ShoppingCart;
+// const getCategoryIcon = (categoryName: string) => {
+//   if (!categoryName) return ShoppingCart;
 
-  const lowerName = categoryName.toLowerCase();
+//   const lowerName = categoryName.toLowerCase();
 
-  if (
-    lowerName.includes('food') ||
-    lowerName.includes('grocer') ||
-    lowerName.includes('restaurant')
-  )
-    return Utensils;
-  if (
-    lowerName.includes('transport') ||
-    lowerName.includes('car') ||
-    lowerName.includes('gas')
-  )
-    return Car;
-  if (lowerName.includes('shop') || lowerName.includes('retail'))
-    return ShoppingBag;
-  if (
-    lowerName.includes('home') ||
-    lowerName.includes('rent') ||
-    lowerName.includes('mortgage')
-  )
-    return Home;
-  if (
-    lowerName.includes('entertain') ||
-    lowerName.includes('movie') ||
-    lowerName.includes('netflix')
-  )
-    return Tv;
-  if (lowerName.includes('health') || lowerName.includes('medical'))
-    return Heart;
-  if (lowerName.includes('education') || lowerName.includes('school'))
-    return GraduationCap;
-  if (lowerName.includes('coffee') || lowerName.includes('cafe')) return Coffee;
-  if (
-    lowerName.includes('travel') ||
-    lowerName.includes('flight') ||
-    lowerName.includes('hotel')
-  )
-    return Plane;
-  if (lowerName.includes('fuel') || lowerName.includes('gasoline')) return Fuel;
-  if (lowerName.includes('gym') || lowerName.includes('fitness'))
-    return Dumbbell;
-  if (lowerName.includes('gift') || lowerName.includes('donation')) return Gift;
-  if (lowerName.includes('internet') || lowerName.includes('wifi')) return Wifi;
-  if (lowerName.includes('phone') || lowerName.includes('mobile')) return Phone;
-  if (lowerName.includes('music') || lowerName.includes('spotify'))
-    return Music;
-  if (lowerName.includes('game') || lowerName.includes('gaming'))
-    return Gamepad2;
-  if (lowerName.includes('subscription') || lowerName.includes('cloud'))
-    return Cloud;
-  if (lowerName.includes('delivery') || lowerName.includes('package'))
-    return Package;
-  if (
-    lowerName.includes('bill') ||
-    lowerName.includes('payment') ||
-    lowerName.includes('credit')
-  )
-    return CreditCard;
-  if (lowerName.includes('savings') || lowerName.includes('investment'))
-    return PiggyBank;
-  if (lowerName.includes('book') || lowerName.includes('learning')) return Book;
-  if (lowerName.includes('bus') || lowerName.includes('train')) return Bus;
-  if (lowerName.includes('electricity') || lowerName.includes('power'))
-    return Zap;
+//   if (
+//     lowerName.includes('food') ||
+//     lowerName.includes('grocer') ||
+//     lowerName.includes('restaurant')
+//   )
+//     return Utensils;
+//   if (
+//     lowerName.includes('transport') ||
+//     lowerName.includes('car') ||
+//     lowerName.includes('gas')
+//   )
+//     return Car;
+//   if (lowerName.includes('shop') || lowerName.includes('retail'))
+//     return ShoppingBag;
+//   if (
+//     lowerName.includes('home') ||
+//     lowerName.includes('rent') ||
+//     lowerName.includes('mortgage')
+//   )
+//     return Home;
+//   if (
+//     lowerName.includes('entertain') ||
+//     lowerName.includes('movie') ||
+//     lowerName.includes('netflix')
+//   )
+//     return Tv;
+//   if (lowerName.includes('health') || lowerName.includes('medical'))
+//     return Heart;
+//   if (lowerName.includes('education') || lowerName.includes('school'))
+//     return GraduationCap;
+//   if (lowerName.includes('coffee') || lowerName.includes('cafe')) return Coffee;
+//   if (
+//     lowerName.includes('travel') ||
+//     lowerName.includes('flight') ||
+//     lowerName.includes('hotel')
+//   )
+//     return Plane;
+//   if (lowerName.includes('fuel') || lowerName.includes('gasoline')) return Fuel;
+//   if (lowerName.includes('gym') || lowerName.includes('fitness'))
+//     return Dumbbell;
+//   if (lowerName.includes('gift') || lowerName.includes('donation')) return Gift;
+//   if (lowerName.includes('internet') || lowerName.includes('wifi')) return Wifi;
+//   if (lowerName.includes('phone') || lowerName.includes('mobile')) return Phone;
+//   if (lowerName.includes('music') || lowerName.includes('spotify'))
+//     return Music;
+//   if (lowerName.includes('game') || lowerName.includes('gaming'))
+//     return Gamepad2;
+//   if (lowerName.includes('subscription') || lowerName.includes('cloud'))
+//     return Cloud;
+//   if (lowerName.includes('delivery') || lowerName.includes('package'))
+//     return Package;
+//   if (
+//     lowerName.includes('bill') ||
+//     lowerName.includes('payment') ||
+//     lowerName.includes('credit')
+//   )
+//     return CreditCard;
+//   if (lowerName.includes('savings') || lowerName.includes('investment'))
+//     return PiggyBank;
+//   if (lowerName.includes('book') || lowerName.includes('learning')) return Book;
+//   if (lowerName.includes('bus') || lowerName.includes('train')) return Bus;
+//   if (lowerName.includes('electricity') || lowerName.includes('power'))
+//     return Zap;
 
-  return ShoppingCart; // default
-};
+//   return ShoppingCart; // default
+// };
 
 export default function HomeScreen({navigation}: any) {
   // Get all data from Redux
   const expenses = useSelector((state: any) => state.userData.expenses || []);
+  console.log('expenses from redux', expenses);
+
   const currentUser = useSelector((state: any) => state.userData.currentUser);
   const categories = useSelector(
     (state: any) => state.userData.categories || [],
@@ -134,6 +136,236 @@ export default function HomeScreen({navigation}: any) {
 
   const userName = currentUser?.name || 'User';
   const monthlyBudget = currentUser?.monthlyBudget || 30000;
+
+  // Update the getCategoryIcon function to use the actual category icon from Redux
+  const getCategoryIcon = (categoryName: string, categories: any[]) => {
+    if (!categoryName) return ShoppingCart;
+
+    // First, try to find the category in Redux to get its actual icon
+    const category = categories.find(
+      (cat: any) => cat.name.toLowerCase() === categoryName.toLowerCase(),
+    );
+
+    // If category found in Redux and has an icon, use it
+    if (category?.icon) {
+      // For emoji icons, we need to return a component that renders the emoji
+      // We'll create a custom component for this
+      const EmojiIcon = ({size, color}: {size: number; color: string}) => (
+        <Text style={{fontSize: size, color}}>{category.icon}</Text>
+      );
+      return EmojiIcon;
+    }
+
+    // Fallback to the existing icon mapping logic
+    const lowerName = categoryName.toLowerCase();
+
+    if (
+      lowerName.includes('food') ||
+      lowerName.includes('grocer') ||
+      lowerName.includes('restaurant')
+    )
+      return Utensils;
+    if (
+      lowerName.includes('transport') ||
+      lowerName.includes('car') ||
+      lowerName.includes('gas')
+    )
+      return Car;
+    if (lowerName.includes('shop') || lowerName.includes('retail'))
+      return ShoppingBag;
+    if (
+      lowerName.includes('home') ||
+      lowerName.includes('rent') ||
+      lowerName.includes('mortgage')
+    )
+      return Home;
+    if (
+      lowerName.includes('entertain') ||
+      lowerName.includes('movie') ||
+      lowerName.includes('netflix')
+    )
+      return Tv;
+    if (lowerName.includes('health') || lowerName.includes('medical'))
+      return Heart;
+    if (lowerName.includes('education') || lowerName.includes('school'))
+      return GraduationCap;
+    if (lowerName.includes('coffee') || lowerName.includes('cafe'))
+      return Coffee;
+    if (
+      lowerName.includes('travel') ||
+      lowerName.includes('flight') ||
+      lowerName.includes('hotel')
+    )
+      return Plane;
+    if (lowerName.includes('fuel') || lowerName.includes('gasoline'))
+      return Fuel;
+    if (lowerName.includes('gym') || lowerName.includes('fitness'))
+      return Dumbbell;
+    if (lowerName.includes('gift') || lowerName.includes('donation'))
+      return Gift;
+    if (lowerName.includes('internet') || lowerName.includes('wifi'))
+      return Wifi;
+    if (lowerName.includes('phone') || lowerName.includes('mobile'))
+      return Phone;
+    if (lowerName.includes('music') || lowerName.includes('spotify'))
+      return Music;
+    if (lowerName.includes('game') || lowerName.includes('gaming'))
+      return Gamepad2;
+    if (lowerName.includes('subscription') || lowerName.includes('cloud'))
+      return Cloud;
+    if (lowerName.includes('delivery') || lowerName.includes('package'))
+      return Package;
+    if (
+      lowerName.includes('bill') ||
+      lowerName.includes('payment') ||
+      lowerName.includes('credit')
+    )
+      return CreditCard;
+    if (lowerName.includes('savings') || lowerName.includes('investment'))
+      return PiggyBank;
+    if (lowerName.includes('book') || lowerName.includes('learning'))
+      return Book;
+    if (lowerName.includes('bus') || lowerName.includes('train')) return Bus;
+    if (lowerName.includes('electricity') || lowerName.includes('power'))
+      return Zap;
+
+    return ShoppingCart; // default
+  };
+
+  // Update the getAllTransactions function
+  // Get all transactions (newest first, limited to 5)
+  const getAllTransactions = () => {
+    if (!expenses || expenses.length === 0) {
+      return [];
+    }
+
+    // Sort by date (newest first) and take only 5 items
+    const sortedExpenses = [...expenses]
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )
+      .slice(0, 5); // Only show 5 most recent transactions
+
+    return sortedExpenses.map((expense: any, index: number) => {
+      // Get category name
+      let categoryName = '';
+      let categoryIcon = '';
+      let categoryColor = '#F97316';
+
+      if (typeof expense.category === 'string') {
+        categoryName = expense.category;
+        // Find category in Redux
+        const categoryDetails = categories.find(
+          (cat: any) => cat.name === categoryName,
+        );
+        if (categoryDetails) {
+          categoryIcon = categoryDetails.icon;
+          categoryColor = categoryDetails.color || '#F97316';
+        }
+      } else if (expense.category && expense.category.name) {
+        categoryName = expense.category.name;
+        categoryIcon = expense.category.icon;
+        categoryColor = expense.category.color || '#F97316';
+      }
+
+      // Use the updated getCategoryIcon function
+      const icon = getCategoryIcon(categoryName, categories);
+
+      // Format date for better readability
+      const date: any = new Date(expense.date);
+      const formattedDate = `${date.toLocaleString('default', {
+        month: 'short',
+      })} ${date.getDate()}, ${date.getFullYear()}`;
+
+      // Truncate description if too long
+      const title = expense.description || 'Transaction';
+      const truncatedTitle =
+        title.length > 30 ? title.substring(0, 30) + '...' : title;
+
+      return {
+        id: expense.id || `expense-${index}`,
+        title: truncatedTitle,
+        fullTitle: title,
+        description: categoryName || 'Category',
+        date: formattedDate,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
+        color: categoryColor,
+        icon,
+        categoryName,
+        categoryIcon,
+      };
+    });
+  };
+
+  // Get recent expenses (last 3 added - newest first by ID)
+  const getRecentExpenses = () => {
+    if (!expenses || expenses.length === 0) {
+      return [];
+    }
+
+    // Sort by ID in descending order (newest added first)
+    // Assuming ID is a timestamp string like "1705837200000"
+    const sortedExpenses = [...expenses]
+      .sort((a: any, b: any) => {
+        // Parse IDs as numbers for comparison
+        const idA = parseInt(a.id) || 0;
+        const idB = parseInt(b.id) || 0;
+        return idB - idA; // Descending (newest first)
+      })
+      .slice(0, 3); // Only show 3 most recently added expenses
+
+    return sortedExpenses.map((expense: any, index: number) => {
+      // Get category name
+      let categoryName = '';
+      let categoryIcon = '';
+      let categoryColor = '#F97316';
+
+      if (typeof expense.category === 'string') {
+        categoryName = expense.category;
+        // Find category in Redux
+        const categoryDetails = categories.find(
+          (cat: any) => cat.name === categoryName,
+        );
+        if (categoryDetails) {
+          categoryIcon = categoryDetails.icon;
+          categoryColor = categoryDetails.color || '#F97316';
+        }
+      } else if (expense.category && expense.category.name) {
+        categoryName = expense.category.name;
+        categoryIcon = expense.category.icon;
+        categoryColor = expense.category.color || '#F97316';
+      }
+
+      // Use the updated getCategoryIcon function
+      const icon = getCategoryIcon(categoryName, categories);
+
+      // Format date (but don't use for sorting)
+      const date = new Date(expense.date);
+      const formattedDate = `${date.getDate()} ${date.toLocaleString(
+        'default',
+        {month: 'short'},
+      )} ${date.getFullYear().toString().slice(-2)}`;
+
+      // Truncate description if too long
+      const title = expense.description || 'Expense';
+      const truncatedTitle =
+        title.length > 25 ? title.substring(0, 25) + '...' : title;
+
+      return {
+        id: expense.id || `recent-${index}`,
+        title: truncatedTitle,
+        fullTitle: title,
+        description: categoryName || 'Category',
+        date: formattedDate,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
+        color: categoryColor,
+        icon,
+        categoryName,
+        categoryIcon,
+      };
+    });
+  };
 
   // Calculate dynamic totals
   const calculateTotals = () => {
@@ -168,119 +400,119 @@ export default function HomeScreen({navigation}: any) {
   const totals = calculateTotals();
 
   // Get all transactions with consistent icons
-  const getAllTransactions = () => {
-    if (!expenses || expenses.length === 0) {
-      return [];
-    }
+  // const getAllTransactions = () => {
+  //   if (!expenses || expenses.length === 0) {
+  //     return [];
+  //   }
 
-    return expenses.slice(0, 10).map((expense: any, index: number) => {
-      // Get category name
-      let categoryName = '';
-      if (typeof expense.category === 'string') {
-        categoryName = expense.category;
-      } else if (expense.category && expense.category.name) {
-        categoryName = expense.category.name;
-      }
+  //   return expenses.slice(0, 10).map((expense: any, index: number) => {
+  //     // Get category name
+  //     let categoryName = '';
+  //     if (typeof expense.category === 'string') {
+  //       categoryName = expense.category;
+  //     } else if (expense.category && expense.category.name) {
+  //       categoryName = expense.category.name;
+  //     }
 
-      // Get category details for color
-      let color = '#F97316';
-      const categoryDetails = categories.find(
-        (cat: any) => cat.name === categoryName,
-      );
-      if (categoryDetails) {
-        color = categoryDetails.color || '#F97316';
-      }
+  //     // Get category details for color
+  //     let color = '#F97316';
+  //     const categoryDetails = categories.find(
+  //       (cat: any) => cat.name === categoryName,
+  //     );
+  //     if (categoryDetails) {
+  //       color = categoryDetails.color || '#F97316';
+  //     }
 
-      // Use consistent icon mapping
-      const icon = getCategoryIcon(categoryName);
+  //     // Use consistent icon mapping
+  //     const icon = getCategoryIcon(categoryName);
 
-      // Format date
-      const date = new Date(expense.date);
-      const formattedDate = `${date.toLocaleString('default', {
-        month: 'short',
-      })} ${date.getDate()}, ${date.getFullYear()}`;
+  //     // Format date
+  //     const date: any = new Date(expense.date);
+  //     const formattedDate = `${date.toLocaleString('default', {
+  //       month: 'short',
+  //     })} ${date.getDate()}, ${date.getFullYear()}`;
 
-      // Truncate description if too long
-      const title = expense.description || 'Transaction';
-      const truncatedTitle =
-        title.length > 30 ? title.substring(0, 30) + '...' : title;
+  //     // Truncate description if too long
+  //     const title = expense.description || 'Transaction';
+  //     const truncatedTitle =
+  //       title.length > 30 ? title.substring(0, 30) + '...' : title;
 
-      return {
-        id: expense.id || `expense-${index}`,
-        title: truncatedTitle,
-        fullTitle: title,
-        description: categoryName || 'Category',
-        date: formattedDate,
-        amount: `$${(expense.amount || 0).toLocaleString()}`,
-        color,
-        icon,
-        categoryName,
-      };
-    });
-  };
+  //     return {
+  //       id: expense.id || `expense-${index}`,
+  //       title: truncatedTitle,
+  //       fullTitle: title,
+  //       description: categoryName || 'Category',
+  //       date: formattedDate,
+  //       amount: `$${(expense.amount || 0).toLocaleString()}`,
+  //       color,
+  //       icon,
+  //       categoryName,
+  //     };
+  //   });
+  // };
 
   const allTransactionsData = getAllTransactions();
 
   // Get recent expenses (last 3 expenses)
-  const getRecentExpenses = () => {
-    if (!expenses || expenses.length === 0) {
-      return [];
-    }
+  // const getRecentExpenses = () => {
+  //   if (!expenses || expenses.length === 0) {
+  //     return [];
+  //   }
 
-    // Sort by date (newest first) and take first 3
-    const sortedExpenses = [...expenses]
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime(),
-      )
-      .slice(0, 3);
+  //   // Sort by date (newest first) and take first 3
+  //   const sortedExpenses = [...expenses]
+  //     .sort(
+  //       (a: any, b: any) =>
+  //         new Date(b.date).getTime() - new Date(a.date).getTime(),
+  //     )
+  //     .slice(0, 3);
 
-    return sortedExpenses.map((expense: any, index: number) => {
-      // Get category name
-      let categoryName = '';
-      if (typeof expense.category === 'string') {
-        categoryName = expense.category;
-      } else if (expense.category && expense.category.name) {
-        categoryName = expense.category.name;
-      }
+  //   return sortedExpenses.map((expense: any, index: number) => {
+  //     // Get category name
+  //     let categoryName = '';
+  //     if (typeof expense.category === 'string') {
+  //       categoryName = expense.category;
+  //     } else if (expense.category && expense.category.name) {
+  //       categoryName = expense.category.name;
+  //     }
 
-      // Get category details for color
-      let color = '#F97316';
-      const categoryDetails = categories.find(
-        (cat: any) => cat.name === categoryName,
-      );
-      if (categoryDetails) {
-        color = categoryDetails.color || '#F97316';
-      }
+  //     // Get category details for color
+  //     let color = '#F97316';
+  //     const categoryDetails = categories.find(
+  //       (cat: any) => cat.name === categoryName,
+  //     );
+  //     if (categoryDetails) {
+  //       color = categoryDetails.color || '#F97316';
+  //     }
 
-      // Use consistent icon mapping
-      const icon = getCategoryIcon(categoryName);
+  //     // Use consistent icon mapping
+  //     const icon = getCategoryIcon(categoryName);
 
-      // Format date
-      const date = new Date(expense.date);
-      const formattedDate = `${date.getDate()} ${date.toLocaleString(
-        'default',
-        {month: 'short'},
-      )} ${date.getFullYear().toString().slice(-2)}`;
+  //     // Format date
+  //     const date = new Date(expense.date);
+  //     const formattedDate = `${date.getDate()} ${date.toLocaleString(
+  //       'default',
+  //       {month: 'short'},
+  //     )} ${date.getFullYear().toString().slice(-2)}`;
 
-      // Truncate description if too long
-      const title = expense.description || 'Expense';
-      const truncatedTitle =
-        title.length > 25 ? title.substring(0, 25) + '...' : title;
+  //     // Truncate description if too long
+  //     const title = expense.description || 'Expense';
+  //     const truncatedTitle =
+  //       title.length > 25 ? title.substring(0, 25) + '...' : title;
 
-      return {
-        id: expense.id || `recent-${index}`,
-        title: truncatedTitle,
-        fullTitle: title,
-        description: categoryName || 'Category',
-        date: formattedDate,
-        amount: `$${(expense.amount || 0).toLocaleString()}`,
-        color,
-        icon,
-        categoryName,
-      };
-    });
-  };
+  //     return {
+  //       id: expense.id || `recent-${index}`,
+  //       title: truncatedTitle,
+  //       fullTitle: title,
+  //       description: categoryName || 'Category',
+  //       date: formattedDate,
+  //       amount: `$${(expense.amount || 0).toLocaleString()}`,
+  //       color,
+  //       icon,
+  //       categoryName,
+  //     };
+  //   });
+  // };
 
   const recentExpensesData = getRecentExpenses();
 
@@ -386,11 +618,14 @@ export default function HomeScreen({navigation}: any) {
               </View>
 
               <FlatList
-                data={recentExpensesData}
+                data={recentExpensesData} // Already sorted newest first
                 keyExtractor={item => item.id.toString()}
-                inverted
+                scrollEnabled={false} // Since it's only 3 items, disable scrolling
                 renderItem={({item}) => {
                   const IconComponent = item.icon;
+                  const isEmojiIcon =
+                    item.categoryIcon && item.categoryIcon.length === 2;
+
                   return (
                     <View style={styles.expenseCard}>
                       <View
@@ -398,7 +633,13 @@ export default function HomeScreen({navigation}: any) {
                           styles.expenseIcon,
                           {backgroundColor: `${item.color}20`},
                         ]}>
-                        <IconComponent size={24} color={item.color} />
+                        {isEmojiIcon ? (
+                          <Text style={[styles.emojiIcon, {color: item.color}]}>
+                            {item.categoryIcon}
+                          </Text>
+                        ) : (
+                          <IconComponent size={24} color={item.color} />
+                        )}
                       </View>
 
                       <View style={styles.expenseInfo}>
@@ -443,11 +684,14 @@ export default function HomeScreen({navigation}: any) {
               </View>
 
               <FlatList
-                data={allTransactionsData}
+                data={allTransactionsData} // Already sorted newest first
                 keyExtractor={item => item.id.toString()}
-                inverted
+                scrollEnabled={false} // Since it's only 5 items, disable scrolling
                 renderItem={({item}) => {
                   const IconComponent = item.icon;
+                  const isEmojiIcon =
+                    item.categoryIcon && item.categoryIcon.length === 2;
+
                   return (
                     <View style={styles.transactionCard}>
                       <View
@@ -455,7 +699,13 @@ export default function HomeScreen({navigation}: any) {
                           styles.transactionIcon,
                           {backgroundColor: item.color},
                         ]}>
-                        <IconComponent size={20} color="#fff" />
+                        {isEmojiIcon ? (
+                          <Text style={styles.emojiIconWhite}>
+                            {item.categoryIcon}
+                          </Text>
+                        ) : (
+                          <IconComponent size={20} color="#fff" />
+                        )}
                       </View>
 
                       <View style={styles.transactionInfo}>
@@ -678,6 +928,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
     minWidth: 0,
+  },
+  emojiIcon: {
+    fontSize: FontSize._22,
+    textAlign: 'center',
+  },
+  emojiIconWhite: {
+    fontSize: FontSize._20,
+    textAlign: 'center',
+    color: '#fff',
   },
   transactionTitle: {
     color: '#fff',

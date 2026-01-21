@@ -49,7 +49,7 @@ const initialState: GoalsState = {
     {
       id: '1',
       label: 'Monthly Income',
-      value: '₹0',
+      value: '$0',
       enabled: true,
       type: 'income',
     },
@@ -170,7 +170,7 @@ const goalsSlice = createSlice({
         s => s.type === 'income',
       );
       if (incomeSetting) {
-        incomeSetting.value = `₹${action.payload.toLocaleString()}`;
+        incomeSetting.value = `$${action.payload.toLocaleString()}`;
       }
     },
 

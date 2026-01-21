@@ -18,6 +18,7 @@ import {AppFonts, FontSize} from '../../assets/fonts';
 import * as Yup from 'yup';
 import {Formik} from 'formik';
 import {Eye, EyeOff} from 'lucide-react-native';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 const Step1Schema = Yup.object().shape({
   name: Yup.string()
@@ -74,28 +75,6 @@ export default function RegisterScreen({navigation}: any) {
     pin: '',
     confirmPin: '',
   });
-
-  // const handleNext = () => {
-  //   if (step === 1) {
-  //     if (!formData.name.trim()) {
-  //       _showToast('Please enter your name', 'info');
-  //       return;
-  //     } else if (!formData.email.trim()) {
-  //       _showToast('Please enter your email', 'info');
-  //       return;
-  //     } else if (!formData.phone.trim()) {
-  //       _showToast('Please enter your phone number', 'info');
-  //       return;
-  //     }
-  //     setStep(2);
-  //   } else if (step === 2) {
-  //     if (!formData.monthlyBudget || parseFloat(formData.monthlyBudget) <= 0) {
-  //       _showToast('Please enter a valid monthly budget', 'info');
-  //       return;
-  //     }
-  //     setStep(3);
-  //   }
-  // };
 
   const handleNext = (values: any, errors: any, touched: any) => {
     if (step === 1) {
@@ -163,61 +142,6 @@ export default function RegisterScreen({navigation}: any) {
     navigation.replace('PinScreen');
   };
 
-  // const renderStep1 = (props: any) => (
-  //   <>
-  //     <Text style={styles.stepTitle}>Personal Information</Text>
-
-  //     <TextInput
-  //       style={[
-  //         styles.input,
-  //         props.touched.name && props.errors.name && styles.inputError,
-  //       ]}
-  //       placeholder="Full Name"
-  //       placeholderTextColor="rgba(255, 255, 255, 0.5)"
-  //       value={props.values.name}
-  //       onChangeText={props.handleChange('name')}
-  //       onBlur={props.handleBlur('name')}
-  //     />
-  //     {props.touched.name && props.errors.name && (
-  //       <Text style={styles.errorText}>{props.errors.name}</Text>
-  //     )}
-
-  //     <TextInput
-  //       style={[
-  //         styles.input,
-  //         props.touched.email && props.errors.email && styles.inputError,
-  //       ]}
-  //       placeholder="Email"
-  //       placeholderTextColor="rgba(255, 255, 255, 0.5)"
-  //       value={props.values.email}
-  //       onChangeText={props.handleChange('email')}
-  //       onBlur={props.handleBlur('email')}
-  //       keyboardType="email-address"
-  //       autoCapitalize="none"
-  //     />
-  //     {props.touched.email && props.errors.email && (
-  //       <Text style={styles.errorText}>{props.errors.email}</Text>
-  //     )}
-
-  //     <TextInput
-  //       style={[
-  //         styles.input,
-  //         props.touched.phone && props.errors.phone && styles.inputError,
-  //       ]}
-  //       placeholder="Phone Number"
-  //       placeholderTextColor="rgba(255, 255, 255, 0.5)"
-  //       value={props.values.phone}
-  //       maxLength={10}
-  //       onChangeText={props.handleChange('phone')}
-  //       onBlur={props.handleBlur('phone')}
-  //       keyboardType="phone-pad"
-  //     />
-  //     {props.touched.phone && props.errors.phone && (
-  //       <Text style={styles.errorText}>{props.errors.phone}</Text>
-  //     )}
-  //   </>
-  // );
-
   const renderStep1 = (props: any) => (
     <>
       <Text style={styles.stepTitle}>Personal Information</Text>
@@ -273,6 +197,8 @@ export default function RegisterScreen({navigation}: any) {
           onChangeText={props.handleChange('phone')}
           onBlur={props.handleBlur('phone')}
           keyboardType="phone-pad"
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
         />
 
         {props.touched.phone && props.errors.phone && (
@@ -298,6 +224,8 @@ export default function RegisterScreen({navigation}: any) {
           onChangeText={props.handleChange('monthlyBudget')}
           onBlur={props.handleBlur('monthlyBudget')}
           keyboardType="numeric"
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
         />
       </View>
       {props.touched.monthlyBudget && props.errors.monthlyBudget && (
@@ -347,6 +275,8 @@ export default function RegisterScreen({navigation}: any) {
           keyboardType="numeric"
           secureTextEntry={!showPin} // 🔥 FIX
           maxLength={4}
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
         />
 
         <TouchableOpacity
@@ -383,6 +313,8 @@ export default function RegisterScreen({navigation}: any) {
           keyboardType="numeric"
           secureTextEntry={!showConfirmPin} // 🔥 FIX
           maxLength={4}
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
         />
 
         <TouchableOpacity
@@ -408,7 +340,7 @@ export default function RegisterScreen({navigation}: any) {
   return (
     <LinearGradient colors={['#141326', '#24224A']} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.scrollView}>
+        <KeyboardAwareScrollView style={styles.scrollView}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <Text style={styles.backButtonText}>←</Text>
@@ -473,7 +405,7 @@ export default function RegisterScreen({navigation}: any) {
               </View>
             )}
           </Formik>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
