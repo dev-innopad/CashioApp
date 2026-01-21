@@ -172,11 +172,11 @@ export default function FinancialReportScreen({navigation}: any) {
 
   const totals = calculateTotals();
 
-  useEffect(() => {
-    if (monthlyIncome === 0 || autoSavePercentage === 0) {
-      setShowWelcomeModal(true);
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (monthlyIncome === 0 || autoSavePercentage === 0) {
+  //     setShowWelcomeModal(true);
+  //   }
+  // }, []);
 
   // Calculate goal percentage
   const calculatePercentage = (saved: number, target: number) => {
@@ -1095,7 +1095,8 @@ export default function FinancialReportScreen({navigation}: any) {
                     style={[styles.modalButton, styles.deleteButton]}
                     onPress={() => {
                       if (editingGoal) {
-                        handleDeleteGoal(editingGoal.id);
+                        // handleDeleteGoal(editingGoal.id);
+                        handleDeletePress(editingGoal.id);
                         setShowEditGoalModal(null);
                       }
                     }}>
@@ -1351,8 +1352,7 @@ export default function FinancialReportScreen({navigation}: any) {
 
                 {/* Description */}
                 <Text style={styles.welcomeText}>
-                  Set up your monthly income and auto-save percentage to start
-                  tracking your savings goals effectively.
+                  Track your savings goals effectively.
                 </Text>
 
                 {/* Buttons */}
