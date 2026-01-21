@@ -341,11 +341,17 @@ export default function HomeScreen({navigation}: any) {
       const icon = getCategoryIcon(categoryName, categories);
 
       // Format date (but don't use for sorting)
-      const date = new Date(expense.date);
-      const formattedDate = `${date.getDate()} ${date.toLocaleString(
-        'default',
-        {month: 'short'},
-      )} ${date.getFullYear().toString().slice(-2)}`;
+      // const date = new Date(expense.date);
+      // const formattedDate = `${date.getDate()} ${date.toLocaleString(
+      //   'default',
+      //   {month: 'short'},
+      // )} ${date.getFullYear().toString().slice(-2)}`;
+
+      const date: any = new Date(expense.date);
+
+      const formattedDate = `${date.toLocaleString('default', {
+        month: 'short',
+      })} ${date.getDate()}, ${date.getFullYear()}`;
 
       // Truncate description if too long
       const title = expense.description || 'Expense';
@@ -631,7 +637,7 @@ export default function HomeScreen({navigation}: any) {
                       <View
                         style={[
                           styles.expenseIcon,
-                          {backgroundColor: `${item.color}20`},
+                          {backgroundColor: `${item.color}`},
                         ]}>
                         {isEmojiIcon ? (
                           <Text style={[styles.emojiIcon, {color: item.color}]}>
@@ -715,12 +721,18 @@ export default function HomeScreen({navigation}: any) {
                           ellipsizeMode="tail">
                           {item.title}
                         </Text>
-                        <Text style={styles.transactionDate}>{item.date}</Text>
+                        <Text style={styles.transactionDate}>
+                          {item.description}
+                        </Text>
                       </View>
 
-                      <Text style={styles.transactionAmount}>
+                      {/* <Text style={styles.transactionAmount}>
                         {item.amount}
-                      </Text>
+                      </Text> */}
+                      <View style={styles.expenseRight}>
+                        <Text style={styles.expenseDate}>{item.date}</Text>
+                        <Text style={styles.expenseAmount}>{item.amount}</Text>
+                      </View>
                     </View>
                   );
                 }}
@@ -735,7 +747,7 @@ export default function HomeScreen({navigation}: any) {
             </View>
 
             {/* Savings Progress */}
-            {totals.totalBudget > 0 && (
+            {/* {totals.totalBudget > 0 && (
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>Savings Progress</Text>
                 <View style={styles.savingsCard}>
@@ -764,7 +776,7 @@ export default function HomeScreen({navigation}: any) {
                   </Text>
                 </View>
               </View>
-            )}
+            )} */}
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -895,7 +907,7 @@ const styles = StyleSheet.create({
   },
   expenseRight: {
     alignItems: 'flex-end',
-    minWidth: 80, // Ensure amount doesn't get squeezed
+    minWidth: 80,
   },
   expenseDate: {
     color: 'rgba(255, 255, 255, 0.7)',

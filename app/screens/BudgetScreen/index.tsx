@@ -106,6 +106,12 @@ export default function FinancialReportScreen({navigation}: any) {
   const [showEditGoalModal, setShowEditGoalModal] = useState<string | null>(
     null,
   );
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationModalData, setValidationModalData] = useState({
+    title: '',
+    message: '',
+    type: 'error' as 'info' | 'warning' | 'error' | 'success',
+  });
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showAutoSaveModal, setShowAutoSaveModal] = useState(false);
   const [fundAmount, setFundAmount] = useState('');
@@ -190,7 +196,12 @@ export default function FinancialReportScreen({navigation}: any) {
   // Handle adding new goal
   const handleAddGoal = () => {
     if (!goalFormData.name.trim() || !goalFormData.target) {
-      _showToast('Please fill all required fields', 'error');
+      setValidationModalData({
+        title: 'Missing Information',
+        message: 'Please fill all required fields',
+        type: 'error',
+      });
+      setShowValidationModal(true);
       return;
     }
 
@@ -198,12 +209,22 @@ export default function FinancialReportScreen({navigation}: any) {
     const saved = parseFloat(goalFormData.saved) || 0;
 
     if (isNaN(target) || target <= 0) {
-      _showToast('Please enter a valid target amount', 'error');
+      setValidationModalData({
+        title: 'Invalid Target Amount',
+        message: 'Please enter a valid target amount greater than 0',
+        type: 'error',
+      });
+      setShowValidationModal(true);
       return;
     }
 
     if (saved > target) {
-      _showToast('Saved amount cannot exceed target amount', 'error');
+      setValidationModalData({
+        title: 'Amount Limit Exceeded',
+        message: 'Saved amount cannot exceed target amount',
+        type: 'warning',
+      });
+      setShowValidationModal(true);
       return;
     }
 
@@ -229,13 +250,45 @@ export default function FinancialReportScreen({navigation}: any) {
     const target = parseFloat(goalFormData.target);
     const saved = parseFloat(goalFormData.saved) || 0;
 
-    if (!goalFormData.name.trim() || isNaN(target) || target <= 0) {
-      _showToast('Please fill all required fields', 'error');
+    // Validation with better error messages
+    if (!goalFormData.name.trim()) {
+      setValidationModalData({
+        title: 'Validation Error',
+        message: 'Please enter a name for your goal',
+        type: 'error',
+      });
+      setShowValidationModal(true);
+      return;
+    }
+
+    if (isNaN(target) || target <= 0) {
+      setValidationModalData({
+        title: 'Invalid Target Amount',
+        message: 'Please enter a valid target amount greater than 0',
+        type: 'error',
+      });
+      setShowValidationModal(true);
+      return;
+    }
+
+    if (isNaN(saved) || saved < 0) {
+      setValidationModalData({
+        title: 'Invalid Saved Amount',
+        message: 'Please enter a valid saved amount (0 or more)',
+        type: 'error',
+      });
+      setShowValidationModal(true);
       return;
     }
 
     if (saved > target) {
-      _showToast('Saved amount cannot exceed target amount', 'error');
+      setValidationModalData({
+        title: 'Amount Limit Exceeded',
+        message:
+          'Saved amount cannot exceed the target amount. Please adjust your saved amount.',
+        type: 'warning',
+      });
+      setShowValidationModal(true);
       return;
     }
 
@@ -367,7 +420,7 @@ export default function FinancialReportScreen({navigation}: any) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -1328,6 +1381,27 @@ export default function FinancialReportScreen({navigation}: any) {
               </View>
             </View>
           </Modal>
+
+          {/* Validation Modal */}
+          <AppModal
+            visible={showValidationModal}
+            type={validationModalData.type}
+            title={validationModalData.title}
+            message={validationModalData.message}
+            cancelText={validationModalData.type === 'success' ? 'OK' : 'Close'}
+            confirmText={
+              validationModalData.type === 'warning' ? 'Edit' : undefined
+            }
+            onClose={() => setShowValidationModal(false)}
+            onConfirm={() => {
+              setShowValidationModal(false);
+              // If it's a warning about exceeding target, keep the modal open for editing
+              if (validationModalData.type === 'warning') {
+                // Focus back on the input field
+                // You might want to add refs to your inputs for this
+              }
+            }}
+          />
         </SafeAreaView>
         <AppModal
           visible={showDeleteModal}

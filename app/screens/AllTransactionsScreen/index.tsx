@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,60 @@ import {
   StatusBar,
   SafeAreaView,
   TouchableOpacity,
+  Image,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {ChevronLeft} from 'lucide-react-native';
+import {ChevronLeft, MapPin, FileText, Eye, X} from 'lucide-react-native';
+import {useSelector} from 'react-redux';
 import AppMainContainer from '../../components/AppMainContainer';
 import {AppFonts, FontSize} from '../../assets/fonts';
+import {_showToast} from '../../services/UIs/ToastConfig';
 
 export default function AllTransactionsScreen({navigation, route}: any) {
-  const {transactions, totals} = route.params || {};
-  const allTransactions = transactions || [];
+  // Get data directly from Redux store
+  const expenses = useSelector((state: any) => state.userData.expenses || []);
+  const currentUser = useSelector((state: any) => state.userData.currentUser);
+  const categories = useSelector(
+    (state: any) => state.userData.categories || [],
+  );
 
-  console.log('All Transactions:->', allTransactions);
+  const monthlyBudget = currentUser?.monthlyBudget || 0;
 
+  // State for viewing transaction details
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Calculate totals
+  const calculateTotals = () => {
+    const totalSpent = expenses.reduce(
+      (sum: number, expense: any) => sum + (expense.amount || 0),
+      0,
+    );
+
+    const formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+      useGrouping: true,
+    });
+
+    return {
+      totalSpent,
+      formattedSpent: `$${formatter.format(totalSpent)}`,
+      totalTransactions: expenses.length,
+    };
+  };
+
+  const totals = calculateTotals();
+
+  // Format date for display
   const formatDate = (dateString: string) => {
-    // Check if it's already in the desired format (like "Jan 20, 2026")
     if (dateString && typeof dateString === 'string') {
-      // If it contains a comma and looks like a formatted date, return as-is
+      // If it's already in the desired format
       if (dateString.includes(',') && dateString.split(' ').length === 3) {
         return dateString;
       }
 
-      // Otherwise try to format it
       try {
         const date = new Date(dateString);
         if (!isNaN(date.getTime())) {
@@ -42,8 +75,93 @@ export default function AllTransactionsScreen({navigation, route}: any) {
       }
     }
 
-    // Return original if all else fails
-    return dateString;
+    return dateString || 'Invalid Date';
+  };
+
+  // Get all transactions sorted by date (newest first)
+  const getAllTransactions = () => {
+    if (!expenses || expenses.length === 0) {
+      return [];
+    }
+
+    // Sort by date (newest first)
+    const sortedExpenses = [...expenses].sort(
+      (a: any, b: any) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    return sortedExpenses.map((expense: any) => {
+      // Get category details
+      let categoryName = '';
+      let categoryIcon = '';
+      let categoryColor = '#F97316';
+
+      if (expense.category) {
+        if (typeof expense.category === 'object') {
+          categoryName = expense.category.name || '';
+          categoryIcon = expense.category.icon || '';
+          categoryColor = expense.category.color || '#F97316';
+        } else if (typeof expense.category === 'string') {
+          categoryName = expense.category;
+          // Find category in Redux
+          const categoryDetails = categories.find(
+            (cat: any) => cat.name === categoryName,
+          );
+          if (categoryDetails) {
+            categoryIcon = categoryDetails.icon || '';
+            categoryColor = categoryDetails.color || '#F97316';
+          }
+        }
+      }
+
+      // Format date
+      const date: any = new Date(expense.date);
+      const formattedDate = `${date.toLocaleString('default', {
+        month: 'short',
+      })} ${date.getDate()}, ${date.getFullYear()}`;
+
+      // Truncate description if too long
+      const title = expense.description || 'Transaction';
+      const truncatedTitle =
+        title.length > 30 ? title.substring(0, 30) + '...' : title;
+
+      // Check if has optional fields
+      const hasLocation = expense.location && expense.location.trim() !== '';
+      const hasNotes = expense.notes && expense.notes.trim() !== '';
+      const hasReceipt = expense.receipt;
+
+      return {
+        id: expense.id,
+        title: truncatedTitle,
+        fullTitle: title,
+        description: categoryName || 'Category',
+        date: formattedDate,
+        amount: `$${(expense.amount || 0).toLocaleString()}`,
+        color: categoryColor,
+        categoryIcon: categoryIcon || '💰',
+        categoryName,
+        hasLocation,
+        hasNotes,
+        hasReceipt,
+        location: expense.location,
+        notes: expense.notes,
+        receipt: expense.receipt,
+        originalExpense: expense, // Keep reference to original data
+      };
+    });
+  };
+
+  const allTransactions = getAllTransactions();
+
+  // Function to view transaction details
+  const viewTransactionDetails = (transaction: any) => {
+    setSelectedTransaction(transaction);
+    setShowDetailsModal(true);
+  };
+
+  // Function to get the original expense by ID
+  const getOriginalExpenseById = (transactionId: string) => {
+    return expenses.find((exp: any) => exp.id === transactionId);
   };
 
   return (
@@ -65,13 +183,13 @@ export default function AllTransactionsScreen({navigation, route}: any) {
           <View style={styles.summaryContainer}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Transactions</Text>
-              <Text style={styles.summaryValue}>{allTransactions.length}</Text>
+              <Text style={styles.summaryValue}>
+                {totals.totalTransactions}
+              </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Spent</Text>
-              <Text style={styles.summaryValue}>
-                {totals?.formattedSpent || '$0'}
-              </Text>
+              <Text style={styles.summaryValue}>{totals.formattedSpent}</Text>
             </View>
           </View>
 
@@ -80,16 +198,29 @@ export default function AllTransactionsScreen({navigation, route}: any) {
             showsVerticalScrollIndicator={false}>
             {allTransactions.length > 0 ? (
               allTransactions.map((transaction: any) => {
-                const IconComponent = transaction.icon;
+                const hasOptionalFields =
+                  transaction.hasLocation ||
+                  transaction.hasNotes ||
+                  transaction.hasReceipt;
+
                 return (
-                  <View key={transaction.id} style={styles.transactionCard}>
+                  <TouchableOpacity
+                    key={transaction.id}
+                    style={styles.transactionCard}
+                    onPress={() =>
+                      viewTransactionDetails(transaction.originalExpense)
+                    }
+                    activeOpacity={0.7}>
                     <View
                       style={[
                         styles.transactionIcon,
                         {backgroundColor: transaction.color},
                       ]}>
-                      <IconComponent size={20} color="#fff" />
+                      <Text style={styles.emojiIcon}>
+                        {transaction.categoryIcon}
+                      </Text>
                     </View>
+
                     <View style={styles.transactionInfo}>
                       <Text
                         style={styles.transactionTitle}
@@ -101,13 +232,37 @@ export default function AllTransactionsScreen({navigation, route}: any) {
                         {transaction.categoryName || transaction.description}
                       </Text>
                       <Text style={styles.transactionDate}>
-                        {transaction.date || formatDate(transaction.date)}
+                        {formatDate(transaction.date)}
                       </Text>
+
+                      {/* Show optional fields indicators */}
+                      {hasOptionalFields && (
+                        <View style={styles.optionalFieldsIndicator}>
+                          {transaction.hasLocation && (
+                            <View style={styles.fieldIndicator}>
+                              <FileText size={12} color="#F4C66A" />
+                              <Text style={styles.fieldIndicatorText}>
+                                Full Info
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
                     </View>
-                    <Text style={styles.transactionAmount}>
-                      {transaction.amount}
-                    </Text>
-                  </View>
+
+                    <View style={styles.transactionRight}>
+                      <Text style={styles.transactionAmount}>
+                        {transaction.amount}
+                      </Text>
+                      {hasOptionalFields && (
+                        <ChevronLeft
+                          size={16}
+                          color="#F4C66A"
+                          style={{transform: [{rotate: '-90deg'}]}}
+                        />
+                      )}
+                    </View>
+                  </TouchableOpacity>
                 );
               })
             ) : (
@@ -119,6 +274,124 @@ export default function AllTransactionsScreen({navigation, route}: any) {
               </View>
             )}
           </ScrollView>
+
+          {/* Transaction Details Modal */}
+          <Modal
+            visible={showDetailsModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowDetailsModal(false)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Transaction Details</Text>
+                  <TouchableOpacity onPress={() => setShowDetailsModal(false)}>
+                    <X size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  style={styles.modalBody}
+                  showsVerticalScrollIndicator={false}>
+                  {selectedTransaction && (
+                    <>
+                      {/* Basic Info */}
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>Description</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedTransaction.description}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>Amount</Text>
+                          <Text style={styles.detailValue}>
+                            ${selectedTransaction.amount?.toLocaleString()}
+                          </Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>Date</Text>
+                          <Text style={styles.detailValue}>
+                            {formatDate(selectedTransaction.date)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Category */}
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>Category</Text>
+                        <View style={styles.categoryDetail}>
+                          <View
+                            style={[
+                              styles.categoryDetailIcon,
+                              {
+                                backgroundColor:
+                                  selectedTransaction.category?.color ||
+                                  '#F97316',
+                              },
+                            ]}>
+                            <Text style={styles.categoryDetailIconText}>
+                              {selectedTransaction.category?.icon || '💰'}
+                            </Text>
+                          </View>
+                          <Text style={styles.detailValue}>
+                            {selectedTransaction.category?.name ||
+                              'Uncategorized'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Optional Fields */}
+                      {selectedTransaction.location && (
+                        <View style={styles.detailSection}>
+                          <View style={styles.detailHeader}>
+                            <MapPin size={20} color="#F4C66A" />
+                            <Text style={styles.detailLabel}>Location</Text>
+                          </View>
+                          <Text style={styles.detailValue}>
+                            {selectedTransaction.location}
+                          </Text>
+                        </View>
+                      )}
+
+                      {selectedTransaction.notes && (
+                        <View style={styles.detailSection}>
+                          <View style={styles.detailHeader}>
+                            <FileText size={20} color="#F4C66A" />
+                            <Text style={styles.detailLabel}>Notes</Text>
+                          </View>
+                          <Text style={styles.detailValue}>
+                            {selectedTransaction.notes}
+                          </Text>
+                        </View>
+                      )}
+
+                      {selectedTransaction.receipt && (
+                        <View style={styles.detailSection}>
+                          <View style={styles.detailHeader}>
+                            <Eye size={20} color="#F4C66A" />
+                            <Text style={styles.detailLabel}>Receipt</Text>
+                          </View>
+
+                          {/* Show receipt preview if available */}
+                          {selectedTransaction.receipt?.uri && (
+                            <View style={styles.receiptPreview}>
+                              <Image
+                                source={{uri: selectedTransaction.receipt.uri}}
+                                style={styles.receiptImage}
+                                resizeMode="cover"
+                              />
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </>
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
       </LinearGradient>
     </AppMainContainer>
@@ -126,6 +399,10 @@ export default function AllTransactionsScreen({navigation, route}: any) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -173,10 +450,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize._24,
     fontFamily: AppFonts.BOLD,
   },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
   transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,6 +465,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+  },
+  emojiIcon: {
+    fontSize: FontSize._24,
+    color: '#fff',
+    textAlign: 'center',
   },
   transactionInfo: {
     flex: 1,
@@ -215,12 +493,35 @@ const styles = StyleSheet.create({
     fontSize: FontSize._12,
     fontFamily: AppFonts.REGULAR,
   },
+  optionalFieldsIndicator: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  fieldIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(244, 198, 106, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  fieldIndicatorText: {
+    color: '#F4C66A',
+    fontSize: FontSize._10,
+    fontFamily: AppFonts.REGULAR,
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+    minWidth: 70,
+  },
   transactionAmount: {
     color: '#FF6B6B',
     fontSize: FontSize._16,
     fontFamily: AppFonts.BOLD,
-    minWidth: 70,
-    textAlign: 'right',
+    marginBottom: 4,
   },
   emptyState: {
     alignItems: 'center',
@@ -242,5 +543,106 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.REGULAR,
     textAlign: 'center',
     paddingHorizontal: 20,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1F1D3A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: FontSize._20,
+    fontFamily: AppFonts.BOLD,
+  },
+  modalBody: {
+    maxHeight: 500,
+  },
+  detailSection: {
+    marginBottom: 20,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  detailItem: {
+    flex: 1,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  detailLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: FontSize._14,
+    fontFamily: AppFonts.REGULAR,
+    marginBottom: 4,
+  },
+  detailValue: {
+    color: '#fff',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
+  },
+  categoryDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoryDetailIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryDetailIconText: {
+    fontSize: FontSize._18,
+    color: '#fff',
+  },
+  receiptButton: {
+    backgroundColor: 'rgba(244, 198, 106, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 198, 106, 0.3)',
+    marginBottom: 12,
+  },
+  receiptButtonText: {
+    color: '#F4C66A',
+    fontSize: FontSize._16,
+    fontFamily: AppFonts.REGULAR,
+  },
+  receiptPreview: {
+    // alignItems: 'center',
+  },
+  receiptImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  receiptPreviewText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: FontSize._12,
+    fontFamily: AppFonts.REGULAR,
+    textAlign: 'center',
   },
 });

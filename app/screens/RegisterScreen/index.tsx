@@ -218,7 +218,7 @@ export default function RegisterScreen({navigation}: any) {
         <Text style={styles.currencySymbol}>$</Text>
         <TextInput
           style={[styles.budgetInput]}
-          placeholder="0.00"
+          placeholder="0"
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={props.values.monthlyBudget}
           onChangeText={props.handleChange('monthlyBudget')}

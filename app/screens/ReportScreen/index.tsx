@@ -583,7 +583,7 @@ export default function ReportScreen({navigation}: any) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -607,30 +607,29 @@ export default function ReportScreen({navigation}: any) {
               <Download size={24} color="#fff" />
             </TouchableOpacity>
           </View>
+          <View style={styles.periodSelector}>
+            {periods.map(period => (
+              <TouchableOpacity
+                key={period}
+                style={[
+                  styles.periodButton,
+                  selectedPeriod === period && styles.periodButtonActive,
+                ]}
+                onPress={() => handlePeriodChange(period)}>
+                <Text
+                  style={[
+                    styles.periodButtonText,
+                    selectedPeriod === period && styles.periodButtonTextActive,
+                  ]}>
+                  {period}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}>
             {/* Period Selector */}
-            <View style={styles.periodSelector}>
-              {periods.map(period => (
-                <TouchableOpacity
-                  key={period}
-                  style={[
-                    styles.periodButton,
-                    selectedPeriod === period && styles.periodButtonActive,
-                  ]}
-                  onPress={() => handlePeriodChange(period)}>
-                  <Text
-                    style={[
-                      styles.periodButtonText,
-                      selectedPeriod === period &&
-                        styles.periodButtonTextActive,
-                    ]}>
-                    {period}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
 
             {/* Main Statistics */}
             {memoizedExpenses.length === 0 ? (
@@ -860,6 +859,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
+    marginHorizontal: 16,
   },
   periodButton: {
     flex: 1,

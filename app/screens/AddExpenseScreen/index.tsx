@@ -262,11 +262,11 @@ export default function AddExpenseScreen({navigation, route}: any) {
       id: Date.now().toString(),
       amount: Number(expense.amount!),
       description: expense.description!,
-      category: expense.category!, // This should be an object
-      date: dateString, // Store as string
-      location: expense.location,
-      receipt: receipt,
-      notes: expense.notes,
+      category: expense.category!,
+      date: dateString,
+      location: expense.location?.trim() || undefined, // Store if not empty
+      receipt: receipt || undefined, // Store if exists
+      notes: expense.notes?.trim() || undefined, // Store if not empty
     };
 
     console.log('new expense', newExpense);
@@ -321,7 +321,7 @@ export default function AddExpenseScreen({navigation, route}: any) {
                       const amount = parseFloat(cleanText) || 0;
                       setExpense({...expense, amount});
                     }}
-                    placeholder="0.00"
+                    placeholder="0"
                     placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     keyboardType="decimal-pad"
                     maxLength={6}
@@ -552,76 +552,6 @@ export default function AddExpenseScreen({navigation, route}: any) {
               </View>
             </ScrollView>
 
-            {/* Category Picker Modal */}
-            {/* {showCategoryPicker && (
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Select Category</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowCategoryPicker(false)}>
-                      <X size={24} color="#fff" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <ScrollView style={styles.categoriesList}>
-                    {categories.map(category => (
-                      <TouchableOpacity
-                        key={category.id}
-                        style={[
-                          styles.categoryOption,
-                          expense.category?.id === category.id &&
-                            styles.categoryOptionSelected,
-                        ]}
-                        onPress={() => {
-                          setExpense({...expense, category});
-                          setShowCategoryPicker(false);
-                        }}>
-                        <View
-                          style={[
-                            styles.categoryOptionIcon,
-                            {backgroundColor: category.color},
-                          ]}>
-                          <Text style={styles.categoryOptionIconText}>
-                            {category.icon}
-                          </Text>
-                        </View>
-                        <Text style={styles.categoryOptionName}>
-                          {category.name}
-                        </Text>
-                        {expense.category?.id === category.id && (
-                          <View style={styles.selectedIndicator}>
-                            <ChevronLeft
-                              size={20}
-                              color="#F97316"
-                              style={{transform: [{rotate: '-90deg'}]}}
-                            />
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-
-                    <TouchableOpacity
-                      style={styles.addNewCategoryOption}
-                      onPress={() => {
-                        setShowCategoryPicker(false);
-                        navigateToAddCategory();
-                      }}>
-                      <View style={styles.addNewIcon}>
-                        <Plus size={20} color="#F4C66A" />
-                      </View>
-                      <Text style={styles.addNewText}>Add New Category</Text>
-                      <ChevronLeft
-                        size={20}
-                        color="#666"
-                        style={{transform: [{rotate: '-90deg'}]}}
-                      />
-                    </TouchableOpacity>
-                  </ScrollView>
-                </View>
-              </View>
-            )} */}
-
             <Modal
               isVisible={showCategoryPicker}
               backdropOpacity={0.8}
@@ -707,17 +637,6 @@ export default function AddExpenseScreen({navigation, route}: any) {
                 </ScrollView>
               </View>
             </Modal>
-
-            {/* Date Picker */}
-            {/* {showDatePicker && (
-              <DateTimePicker
-                value={expense.date!}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onDateChange}
-                maximumDate={new Date()}
-              />
-            )} */}
           </KeyboardAwareScrollView>
         </SafeAreaView>
       </LinearGradient>
