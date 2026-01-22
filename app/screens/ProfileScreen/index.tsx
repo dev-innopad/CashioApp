@@ -436,6 +436,7 @@ export default function ProfileScreen({navigation}: any) {
                   <DollarSign size={20} color="#F4C66A" />,
                   'monthlyBudget',
                   'numeric',
+                  6,
                 )}
 
                 {isEditing && (
