@@ -774,7 +774,7 @@ export default function HomeScreen({navigation}: any) {
                       <View
                         style={[
                           styles.expenseIcon,
-                          {backgroundColor: `${item.color}20`},
+                          {backgroundColor: `${item.color}`},
                         ]}>
                         <Text style={[styles.emojiIcon, {color: item.color}]}>
                           {item.icon}
