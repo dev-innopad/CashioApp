@@ -283,6 +283,8 @@ export default function ProfileScreen({navigation}: any) {
           // editable={key !== 'monthlyBudget'} // Don't edit budget from here
           editable={true}
           maxLength={maxLength}
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
         />
       ) : (
         <Text style={styles.inputValue}>
