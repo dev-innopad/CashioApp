@@ -234,51 +234,96 @@ export default function HomeScreen({navigation}: any) {
 
   // Update the getAllTransactions function
   // Get all transactions (newest first, limited to 5)
+  // const getAllTransactions = () => {
+  //   if (!expenses || expenses.length === 0) {
+  //     return [];
+  //   }
+
+  //   // Sort by date (newest first) and take only 5 items
+  //   const sortedExpenses = [...expenses]
+  //     .sort(
+  //       (a: any, b: any) =>
+  //         new Date(b.date).getTime() - new Date(a.date).getTime(),
+  //     )
+  //     .slice(0, 5); // Only show 5 most recent transactions
+
+  //   return sortedExpenses.map((expense: any, index: number) => {
+  //     // Get category name
+  //     let categoryName = '';
+  //     let categoryIcon = '';
+  //     let categoryColor = '#F97316';
+
+  //     if (typeof expense.category === 'string') {
+  //       categoryName = expense.category;
+  //       // Find category in Redux
+  //       const categoryDetails = categories.find(
+  //         (cat: any) => cat.name === categoryName,
+  //       );
+  //       if (categoryDetails) {
+  //         categoryIcon = categoryDetails.icon;
+  //         categoryColor = categoryDetails.color || '#F97316';
+  //       }
+  //     } else if (expense.category && expense.category.name) {
+  //       categoryName = expense.category.name;
+  //       categoryIcon = expense.category.icon;
+  //       categoryColor = expense.category.color || '#F97316';
+  //     }
+
+  //     // Use the updated getCategoryIcon function
+  //     const icon = getCategoryIcon(categoryName, categories);
+
+  //     // Format date for better readability
+  //     const date: any = new Date(expense.date);
+  //     const formattedDate = `${date.toLocaleString('default', {
+  //       month: 'short',
+  //     })} ${date.getDate()}, ${date.getFullYear()}`;
+
+  //     // Truncate description if too long
+  //     const title = expense.description || 'Transaction';
+  //     const truncatedTitle =
+  //       title.length > 30 ? title.substring(0, 30) + '...' : title;
+
+  //     return {
+  //       id: expense.id || `expense-${index}`,
+  //       title: truncatedTitle,
+  //       fullTitle: title,
+  //       description: categoryName || 'Category',
+  //       date: formattedDate,
+  //       amount: `$${(expense.amount || 0).toLocaleString()}`,
+  //       color: categoryColor,
+  //       icon,
+  //       categoryName,
+  //       categoryIcon,
+  //     };
+  //   });
+  // };
+
   const getAllTransactions = () => {
     if (!expenses || expenses.length === 0) {
       return [];
     }
 
-    // Sort by date (newest first) and take only 5 items
     const sortedExpenses = [...expenses]
       .sort(
         (a: any, b: any) =>
           new Date(b.date).getTime() - new Date(a.date).getTime(),
       )
-      .slice(0, 5); // Only show 5 most recent transactions
+      .slice(0, 5);
 
     return sortedExpenses.map((expense: any, index: number) => {
-      // Get category name
-      let categoryName = '';
-      let categoryIcon = '';
-      let categoryColor = '#F97316';
+      // Get category details directly from expense
+      const category = expense.category || {};
+      const categoryName = category.name || 'Category';
+      const categoryIcon = category.icon || '🛒';
+      const categoryColor = category.color || '#F97316';
 
-      if (typeof expense.category === 'string') {
-        categoryName = expense.category;
-        // Find category in Redux
-        const categoryDetails = categories.find(
-          (cat: any) => cat.name === categoryName,
-        );
-        if (categoryDetails) {
-          categoryIcon = categoryDetails.icon;
-          categoryColor = categoryDetails.color || '#F97316';
-        }
-      } else if (expense.category && expense.category.name) {
-        categoryName = expense.category.name;
-        categoryIcon = expense.category.icon;
-        categoryColor = expense.category.color || '#F97316';
-      }
-
-      // Use the updated getCategoryIcon function
-      const icon = getCategoryIcon(categoryName, categories);
-
-      // Format date for better readability
+      // Format date
       const date: any = new Date(expense.date);
       const formattedDate = `${date.toLocaleString('default', {
         month: 'short',
       })} ${date.getDate()}, ${date.getFullYear()}`;
 
-      // Truncate description if too long
+      // Truncate description
       const title = expense.description || 'Transaction';
       const truncatedTitle =
         title.length > 30 ? title.substring(0, 30) + '...' : title;
@@ -287,73 +332,116 @@ export default function HomeScreen({navigation}: any) {
         id: expense.id || `expense-${index}`,
         title: truncatedTitle,
         fullTitle: title,
-        description: categoryName || 'Category',
+        description: categoryName,
         date: formattedDate,
         amount: `$${(expense.amount || 0).toLocaleString()}`,
         color: categoryColor,
-        icon,
+        icon: categoryIcon, // This is now a string (emoji)
         categoryName,
-        categoryIcon,
+        categoryColor,
       };
     });
   };
 
   // Get recent expenses (last 3 added - newest first by ID)
+  // const getRecentExpenses = () => {
+  //   if (!expenses || expenses.length === 0) {
+  //     return [];
+  //   }
+
+  //   // Sort by ID in descending order (newest added first)
+  //   // Assuming ID is a timestamp string like "1705837200000"
+  //   const sortedExpenses = [...expenses]
+  //     .sort((a: any, b: any) => {
+  //       // Parse IDs as numbers for comparison
+  //       const idA = parseInt(a.id) || 0;
+  //       const idB = parseInt(b.id) || 0;
+  //       return idB - idA; // Descending (newest first)
+  //     })
+  //     .slice(0, 3); // Only show 3 most recently added expenses
+
+  //   return sortedExpenses.map((expense: any, index: number) => {
+  //     // Get category name
+  //     let categoryName = '';
+  //     let categoryIcon = '';
+  //     let categoryColor = '#F97316';
+
+  //     if (typeof expense.category === 'string') {
+  //       categoryName = expense.category;
+  //       // Find category in Redux
+  //       const categoryDetails = categories.find(
+  //         (cat: any) => cat.name === categoryName,
+  //       );
+  //       if (categoryDetails) {
+  //         categoryIcon = categoryDetails.icon;
+  //         categoryColor = categoryDetails.color || '#F97316';
+  //       }
+  //     } else if (expense.category && expense.category.name) {
+  //       categoryName = expense.category.name;
+  //       categoryIcon = expense.category.icon;
+  //       categoryColor = expense.category.color || '#F97316';
+  //     }
+
+  //     // Use the updated getCategoryIcon function
+  //     const icon = getCategoryIcon(categoryName, categories);
+
+  //     // Format date (but don't use for sorting)
+  //     // const date = new Date(expense.date);
+  //     // const formattedDate = `${date.getDate()} ${date.toLocaleString(
+  //     //   'default',
+  //     //   {month: 'short'},
+  //     // )} ${date.getFullYear().toString().slice(-2)}`;
+
+  //     const date: any = new Date(expense.date);
+
+  //     const formattedDate = `${date.toLocaleString('default', {
+  //       month: 'short',
+  //     })} ${date.getDate()}, ${date.getFullYear()}`;
+
+  //     // Truncate description if too long
+  //     const title = expense.description || 'Expense';
+  //     const truncatedTitle =
+  //       title.length > 25 ? title.substring(0, 25) + '...' : title;
+
+  //     return {
+  //       id: expense.id || `recent-${index}`,
+  //       title: truncatedTitle,
+  //       fullTitle: title,
+  //       description: categoryName || 'Category',
+  //       date: formattedDate,
+  //       amount: `$${(expense.amount || 0).toLocaleString()}`,
+  //       color: categoryColor,
+  //       icon,
+  //       categoryName,
+  //       categoryIcon,
+  //     };
+  //   });
+  // };
+
   const getRecentExpenses = () => {
     if (!expenses || expenses.length === 0) {
       return [];
     }
 
-    // Sort by ID in descending order (newest added first)
-    // Assuming ID is a timestamp string like "1705837200000"
     const sortedExpenses = [...expenses]
       .sort((a: any, b: any) => {
-        // Parse IDs as numbers for comparison
         const idA = parseInt(a.id) || 0;
         const idB = parseInt(b.id) || 0;
-        return idB - idA; // Descending (newest first)
+        return idB - idA;
       })
-      .slice(0, 3); // Only show 3 most recently added expenses
+      .slice(0, 3);
 
     return sortedExpenses.map((expense: any, index: number) => {
-      // Get category name
-      let categoryName = '';
-      let categoryIcon = '';
-      let categoryColor = '#F97316';
-
-      if (typeof expense.category === 'string') {
-        categoryName = expense.category;
-        // Find category in Redux
-        const categoryDetails = categories.find(
-          (cat: any) => cat.name === categoryName,
-        );
-        if (categoryDetails) {
-          categoryIcon = categoryDetails.icon;
-          categoryColor = categoryDetails.color || '#F97316';
-        }
-      } else if (expense.category && expense.category.name) {
-        categoryName = expense.category.name;
-        categoryIcon = expense.category.icon;
-        categoryColor = expense.category.color || '#F97316';
-      }
-
-      // Use the updated getCategoryIcon function
-      const icon = getCategoryIcon(categoryName, categories);
-
-      // Format date (but don't use for sorting)
-      // const date = new Date(expense.date);
-      // const formattedDate = `${date.getDate()} ${date.toLocaleString(
-      //   'default',
-      //   {month: 'short'},
-      // )} ${date.getFullYear().toString().slice(-2)}`;
+      const category = expense.category || {};
+      const categoryName = category.name || 'Category';
+      const categoryIcon = category.icon || '🛒';
+      const categoryColor = category.color || '#F97316';
 
       const date: any = new Date(expense.date);
-
       const formattedDate = `${date.toLocaleString('default', {
         month: 'short',
       })} ${date.getDate()}, ${date.getFullYear()}`;
 
-      // Truncate description if too long
       const title = expense.description || 'Expense';
       const truncatedTitle =
         title.length > 25 ? title.substring(0, 25) + '...' : title;
@@ -362,13 +450,13 @@ export default function HomeScreen({navigation}: any) {
         id: expense.id || `recent-${index}`,
         title: truncatedTitle,
         fullTitle: title,
-        description: categoryName || 'Category',
+        description: categoryName,
         date: formattedDate,
         amount: `$${(expense.amount || 0).toLocaleString()}`,
         color: categoryColor,
-        icon,
+        icon: categoryIcon, // This is now a string (emoji)
         categoryName,
-        categoryIcon,
+        categoryColor,
       };
     });
   };
@@ -623,7 +711,7 @@ export default function HomeScreen({navigation}: any) {
                 <Text style={styles.sectionTitle}>Recent Expenses</Text>
               </View>
 
-              <FlatList
+              {/* <FlatList
                 data={recentExpensesData} // Already sorted newest first
                 keyExtractor={item => item.id.toString()}
                 scrollEnabled={false} // Since it's only 3 items, disable scrolling
@@ -674,6 +762,49 @@ export default function HomeScreen({navigation}: any) {
                     true,
                   )
                 }
+              /> */}
+              <FlatList
+                data={recentExpensesData}
+                keyExtractor={item => item.id.toString()}
+                scrollEnabled={false}
+                renderItem={({item}) => {
+                  // item.icon is now a string (emoji)
+                  return (
+                    <View style={styles.expenseCard}>
+                      <View
+                        style={[
+                          styles.expenseIcon,
+                          {backgroundColor: `${item.color}20`},
+                        ]}>
+                        <Text style={[styles.emojiIcon, {color: item.color}]}>
+                          {item.icon}
+                        </Text>
+                      </View>
+                      <View style={styles.expenseInfo}>
+                        <Text
+                          style={styles.expenseTitle}
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
+                          {item.title}
+                        </Text>
+                        <Text style={styles.expenseDescription}>
+                          {item.description}
+                        </Text>
+                      </View>
+                      <View style={styles.expenseRight}>
+                        <Text style={styles.expenseDate}>{item.date}</Text>
+                        <Text style={styles.expenseAmount}>{item.amount}</Text>
+                      </View>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={() =>
+                  renderEmptyState(
+                    'No Transactions',
+                    'Your transactions will appear here',
+                    true,
+                  )
+                }
               />
             </View>
 
@@ -689,7 +820,7 @@ export default function HomeScreen({navigation}: any) {
                 </TouchableOpacity>
               </View>
 
-              <FlatList
+              {/* <FlatList
                 data={allTransactionsData} // Already sorted newest first
                 keyExtractor={item => item.id.toString()}
                 scrollEnabled={false} // Since it's only 5 items, disable scrolling
@@ -725,10 +856,46 @@ export default function HomeScreen({navigation}: any) {
                           {item.description}
                         </Text>
                       </View>
-
-                      {/* <Text style={styles.transactionAmount}>
-                        {item.amount}
-                      </Text> */}
+                      <View style={styles.expenseRight}>
+                        <Text style={styles.expenseDate}>{item.date}</Text>
+                        <Text style={styles.expenseAmount}>{item.amount}</Text>
+                      </View>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={() =>
+                  renderEmptyState(
+                    'No Transactions',
+                    'Your transactions will appear here',
+                    true,
+                  )
+                }
+              /> */}
+              <FlatList
+                data={allTransactionsData}
+                keyExtractor={item => item.id.toString()}
+                scrollEnabled={false}
+                renderItem={({item}) => {
+                  return (
+                    <View style={styles.transactionCard}>
+                      <View
+                        style={[
+                          styles.transactionIcon,
+                          {backgroundColor: item.color},
+                        ]}>
+                        <Text style={styles.emojiIconWhite}>{item.icon}</Text>
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text
+                          style={styles.transactionTitle}
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
+                          {item.title}
+                        </Text>
+                        <Text style={styles.transactionDate}>
+                          {item.description}
+                        </Text>
+                      </View>
                       <View style={styles.expenseRight}>
                         <Text style={styles.expenseDate}>{item.date}</Text>
                         <Text style={styles.expenseAmount}>{item.amount}</Text>
